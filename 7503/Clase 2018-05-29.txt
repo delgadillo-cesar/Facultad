@@ -1,0 +1,106 @@
+Segment pila stack
+         resb  64
+Stacktop:
+
+Segment datos data
+matriz   resb  9
+result   resb  2
+         db    "$"
+msgIng   db    10,"Ingrese un nro 0-9:$"
+filename db    "ARCH.TXT",0
+fHandle  resw
+
+Segment codigo code
+..start
+         mov   ax,pila
+         mov   ds,ax
+         mov   ax,datos
+         mov   ss,ax
+         mov   sp,Stacktop
+
+         call  INGRESO
+         call  CALCULAR
+         call  MOSTRAR
+FIN:     mov   ah,4ch
+         int   21h
+
+
+INGRESO:
+         mov   cx,9
+         mov,  si,0
+OTRO:    
+         mov   dx,msgIng
+         call  MOSTRAR_MSG
+         call  LEER_CAR
+         mov   byte[matriz+si],al
+         inc   si
+         loop  OTRO
+         ret
+
+MOSTRAR_MSG:
+         mov   ah,9h
+         int   21h
+         ret
+
+LEER_CAR:
+         mov   ah,1; caracter --> al
+         int   21h
+         ret
+
+CALCULAR:
+         mov   cx,3
+         mov   si,0
+         mov   bx,0
+SUMAR:
+         mov   al,byte[matriz+si]
+         sub   al,30h
+         add   bl,al
+         add   si,4
+         loop  SUMAR
+         ret
+
+MOSTRAR:
+         mov   ax,bx
+         mov   bx,10
+         div   bl     ; resultado --> ax  (ah:resto, al:cociente)
+         add   ah,30h
+         add   al,30h
+         mov   byte[result],al
+         mov   byte[result+1],ah
+         mov   dx,result
+         call  MOSTRAR_MSG
+         ret
+
+*********************************************************************************************
+Cambio la rutina interna de ingreso para que en vez de recibir los datos a travez del teclado
+lo haga a traves de un archivo.
+*********************************************************************************************
+INGRESO:
+         call  ABRIR_ARCH
+         call  LEER_ARCH
+         mov   bx,[fHandle]
+         mov   ah,3eh
+         int   21h
+       ; jc    ERR_CIERRE
+         ret
+
+ABRIR_ARCH:
+         mov   al,0  ; 0:LECTURA
+         mov   dx,filename
+         mov   ah,3dh
+         int   21h   ; fHandle --> ax
+       ; jc    ERR_OPEN
+         mov   [fHandle],ax
+         ret
+
+LEER_ARCH:
+         mov   bx,[fHandle]
+         mov   cx,9
+         mov   dx,matriz
+         mov   ah,3fh
+         int   21h
+       ; jc    ERR_READ
+       ; cmp   ax,9
+       ; jl    ERR_READ
+         ret
+
