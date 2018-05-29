@@ -1,0 +1,289 @@
+* REGISTROS
+* 4: TOP STACK
+* 5: TOP HEAP
+TP89835  SUBENTRY BASES=(3)
+         LA    4,STACK
+         LA    5,HEAP
+         LA    7,9
+         BAL   6,INIVECT
+         BAL   6,DUMMY
+         BAL   6,PROCESAR
+         SUBEXIT
+
+
+* REGISTROS
+* 4: TOP STACK
+* 6: RETORNO
+* 14: ELEMENTO STACK
+PUSH     ST    14,0(4)
+         A     4,=F'4'
+         BR    6
+
+
+* REGISTROS
+* 4: TOP STACK
+* 6: RETORNO
+* 14: ELEMENTO STACK
+POP      S     4,=F'4'
+         L     14,0(4)
+         BR    6
+
+
+* REGISTROS
+* 5: TOP HEAP
+* 6: RETORNO
+* 13: AUX
+* 15: IN--> BYTES A RESERVAR
+*     OUT --> DIRECCION RESERVADA
+MALLOC   L    13,0(5)
+         AR   5,15
+         L    15,0(13)
+         BR    6
+         
+         
+* REGISTROS: 
+* 6: DIRECCION DE RETORNO
+* 7: CANTIDAD DE ESTACIONES
+* 8: VECTOR DE ESTACIONES
+INIVECT  L     14,0(6)
+         BAL   6,PUSH
+         LA    8,VECEST
+OTRAEST  MVI   0(8),C'N'
+         MVC   1(4,8),=F'-1'
+         A     8,5
+         BCT   7,OTRAEST
+         BAL   6,POP
+         L     6,0(14)
+         BR    6
+
+
+* REGISTROS: 
+* 6: DIRECCION DE RETORNO
+* 7: ESTACION 1
+* 8: ESTACION 2
+* 9: AUX
+LOADTRAM L     14,0(6)
+         BAL   6,PUSH
+         LA    9,VECEST
+         S     7,=F'1'
+         A     9,7
+         MVC   NODOVEC,0(9)
+         CLC   DIRLIST,=F'-1'  LISTA VACIA
+         BE    NEWNODE
+         L     9,DIRLIST
+LEERNODO MVC   NODLIST,0(9)
+         CLC   DIRSIG,=F'-1'   ULTIMO NODO
+         BE    NEWNODE
+         L     9,DIRSIG
+         B     LEERNODO
+NEWNODE  L     15,=F'5'        CANTIDAD DE BYTES DEL NODO DE LA LISTA
+         BAL   6,MALLOC
+         ST    15,1(9)
+         STC   8,0(15)
+         MVC   1(4,15),=F'-1'
+         BAL   6,POP
+         L     6,0(14)
+         BR    6
+
+
+NEWLINEA L     14,0(6)
+         BAL   6,PUSH
+         LA    15,8
+         BAL   6,MALLOC
+         L     9,0(15)
+         LA    15,20
+         BAL   6,MALLOC
+         ST    15,0(9)
+         L     10,0(15)
+         MVI   0(10),X'FF'
+         MVC   4(4,9),=F'-1'
+         BAL   6,POP
+         L     6,0(14)
+         BR    6
+
+ADDTOLIN L     14,0(6)
+         BAL   6,PUSH
+         
+         BAL   6,POP
+         L     6,0(14)
+         BR    6
+
+
+* REGISTROS
+* 6: RETORNO
+* 7: VECTOR ESTACIONES
+* 11: ESTACION A PROCESAR
+* 12: POSICION DEL NODO DE LA LISTA DE RELACIONES
+PROCEST  LR    14,6
+         BAL   6,PUSH
+
+* AGREGAR ESTACION
+         BAL   6,ADDTOLIN
+         LR    14,7
+         BAL   6,PUSH
+         LA    7,VECEST
+         AR    7,11
+         S     7,=F'1'
+         MVC   NODOVEC,0(7)
+         CLI   FLAG,C'N'
+         BNE   OMITIRE
+         MVI   FLAG,C'S'
+         MVC   0(5,7),NODOVEC
+         L     12,DIRLIST
+         BAL   6,PROCREL
+OMITIRE  BAL   6,POP
+         LR    7,14
+         BAL   6,POP
+         LR    6,14
+         BR    6
+
+
+* REGISTROS
+* 6: RETORNO
+* 11: ESTACION A PROCESAR
+* 12: POSICION DEL NODO DE LA LISTA DE RELACIONES
+PROCREL  LR    14,6
+         BAL   6,PUSH
+         CLC   12,=F'-1'
+         BE    FINREL
+         LR    14,12
+         BAL   6,PUSH
+         MVC   NODLIST,0(12)
+         LA    11,0
+         IC    11,ESTACION
+         BAL   6,PROCEST
+         BAL   6,POP
+         LR    12,14
+         MVC   NODLIST,0(12)
+         L     12,DIRSIG
+         B     PROCREL
+FINREL   BAL   6,POP
+         LR    6,14
+         BR    6
+
+* REGISTROS
+* 6: RETORNO
+* 7: VECTOR ESTACIONES
+* 8: CONTADOR DE REPETICION
+* 9: PUNTERO A NODO DE LINEA ACTUAL
+* 10: POSICION DEL VECTOR DE ESTACIONES DE UNA LINEA
+PROCESAR L     14,0(6)
+         BAL   6,PUSH
+         BAL   6,NEWLINEA
+         ST    9,LINEAS
+* iterar vector de estaciones
+OTRAE    LA    7,VECEST
+         LA    8,20
+         MVC   NODOVEC,0(7)
+         CLI   FLAG,C'N'
+         BNE   OMITIR
+         MVI   FLAG,C'S'
+         BAL   6,ADDTOLIN
+         BAL   6,PROCREL
+
+
+         LA    15,8
+         BAL   6,MALLOC
+         ST    15,4(9)
+         L     9,0(15)
+OMITIR   A     7,=F'5'
+         BCT   8,OTRAE
+         BAL   6,POP
+         L     6,0(14)
+         BR    6
+
+
+DUMMY    L     14,0(6)
+         BAL   6,PUSH
+* (8,1)
+         LA    7,1
+         LA    8,8
+         BAL   6,LOADTRAM
+         LA    7,8
+         LA    8,1
+         BAL   6,LOADTRAM
+* (3,6)
+         LA    7,3
+         LA    8,6
+         BAL   6,LOADTRAM
+         LA    7,6
+         LA    8,3
+         BAL   6,LOADTRAM
+* (4,9)
+         LA    7,4
+         LA    8,9
+         BAL   6,LOADTRAM
+         LA    7,9
+         LA    8,4
+         BAL   6,LOADTRAM
+* (1,7)
+         LA    7,1
+         LA    8,7
+         BAL   6,LOADTRAM
+         LA    7,7
+         LA    8,1
+         BAL   6,LOADTRAM
+* (2,7)
+         LA    7,2
+         LA    8,7
+         BAL   6,LOADTRAM
+         LA    7,7
+         LA    8,2
+         BAL   6,LOADTRAM
+* (1,4)
+         LA    7,1
+         LA    8,4
+         BAL   6,LOADTRAM
+         LA    7,4
+         LA    8,1
+         BAL   6,LOADTRAM
+* (5,4)
+         LA    7,5
+         LA    8,4
+         BAL   6,LOADTRAM
+         LA    7,4
+         LA    8,5
+         BAL   6,LOADTRAM
+* (1,9)
+         LA    7,1
+         LA    8,9
+         BAL   6,LOADTRAM
+         LA    7,9
+         LA    8,1
+         BAL   6,LOADTRAM
+* *******************************
+         BAL   6,POP
+         L     6,0(14)
+         BR    6
+
+
+* ******* VARIABLES ********
+         
+STACK    DS    100FL1
+HEAP     DS    1000FL1
+
+* VECTOR DE ESTACIONES DE 1 A 20 (0..19)          
+VECEST   DS    100XL1'00'
+
+* NODO DEL VECTOR DE ESTACIONES
+NODOVEC  DS    0CL5
+FLAG     DS    C
+DIRLIST  DS    F
+
+* NODO DE LISTA DE CONEXIONES DE UNA ESTACION
+NODLIST  DS    0CL5
+ESTACION DS    X
+DIRSIG   DS    F
+
+
+* PUNTERO A LISTA DE LINEAS
+LINEAS   DS    F
+
+* NODO DE LA LISTA DE LINEAS
+MODOLINE DS    0FL2
+VECLINE  DS    F
+LINEASIG DS    F
+
+
+         END
+
