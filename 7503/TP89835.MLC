@@ -5,10 +5,7 @@
 PRUEBA   SUBENTRY BASES=(3)
          LA    4,STACK
          LA    5,HEAP
-         ST    5,AUX
-         LA    8,9
-         BAL   7,INIVECT
-         BAL   7,DUMMY
+         BAL   7,LOADDATA
          BAL   7,PROCESAR
          BAL   7,MOSTRAR
          SUBEXIT
@@ -41,6 +38,34 @@ MALLOC   ST    5,AUX
          AR    5,6
          L     6,AUX
          BR    7         
+
+LOADDATA LR    6,7
+         BAL   7,PUSH
+         MVI   FLAGERR,X'FF'
+         OPEN  (ARCH,(INPUT))
+         GET   ARCH,ARCHGET
+         LA    8,0
+         IC    8,ARCHGET
+         BAL   7,INIVECT
+LEERTRAM GET   ARCH,ARCHGET
+         MVI   FLAGERR,X'FF'
+         LA    8,0
+         IC    8,ARCHGET
+         LR    12,8
+         GET   ARCH,ARCHGET
+         MVI   FLAGERR,X'00'
+         LA    9,0
+         IC    9,ARCHGET
+         BAL   7,LOADTRAM
+         LA    8,0
+         IC    8,ARCHGET
+         LR    9,12
+         BAL   7,LOADTRAM
+         B     LEERTRAM
+FINARCH  CLOSE ARCH
+         BAL   7,POP
+         LR    7,6
+         BR    7
 
          
 * REGISTROS: 
@@ -374,7 +399,11 @@ WTOBLOCK DC    H'84'
 TEXTO    DC    80CL1' '
 VACIO    DC    80CL1' '
 
-AUX      DS    CL4
+ARCH     DCB   DSNAME=FILENAME,LRECL=1,RECFM=FB,MACRF=GM,EODAD=FINARCH
+FILENAME DC    C'tp.dat',X'00'
 
+AUX      DS    CL4
+ARCHGET  DS    X
+FLAGERR  DS    X
          END
 
