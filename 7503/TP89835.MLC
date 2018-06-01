@@ -3,22 +3,14 @@
 * 5: TOP HEAP
 * 7: INVOCACION A RUTINA
 PRUEBA   SUBENTRY BASES=(3)
-         OPEN  (ARCH,(OUTPUT))
-         OPEN  (ARCH2,(OUTPUT))
-         OPEN  (ARCH3,(OUTPUT))
          LA    4,STACK
          LA    5,HEAP
          ST    5,AUX
-         PUT   ARCH3,AUX
          LA    8,9
          BAL   7,INIVECT
          BAL   7,DUMMY
          BAL   7,PROCESAR
-         PUT   ARCH,VECEST
-         PUT   ARCH2,HEAP
-         CLOSE ARCH
-         CLOSE ARCH2
-         CLOSE ARCH3
+         BAL   7,MOSTRAR
          SUBEXIT
 
 
@@ -117,8 +109,6 @@ NEWLINEA LR    6,7
          B     GENNODO
 NOFIRST  ST    6,4(10)
 GENNODO  LR    10,6
-         ST    10,AUX
-         PUT   ARCH3,AUX
          LA    6,21
          BAL   7,MALLOC
          ST    6,0(10)
@@ -152,7 +142,6 @@ ULTIMO   STC   6,0(11)
 * 12: NODO ACTUAL DE LA LISTA DE RELACIONES
 PROCREL  LR    6,7
          BAL   7,PUSH
-         WTO   'PROCESANDO RELACIONES'
          CL    12,=F'-1'
          BE    OMITEREL
          LR    6,12
@@ -220,9 +209,7 @@ OTRO     MVC   NODOVEC,0(8)
          BAL   7,PROCEST
          BAL   7,POP
          LR    8,6
-         B     SIGUIENT
-OMITIR   WTO   'ESTACION OMITIDA'
-SIGUIENT A     8,=F'5'
+OMITIR   A     8,=F'5'
          BCT   9,OTRO
          BAL   7,POP
          LR    7,6
@@ -295,6 +282,70 @@ DUMMY    LR    6,7
          LR    7,6
          BR    7
 
+* REGISTROS:
+* 7: DIRECCION DE RETORNO
+* 9: PUNTERO AL ELEMENTO DE LA LISTA DE ESTACIONES
+* 10: POSICION DEL STRING
+* 11: AUX
+TEXTEST  LR    6,7
+         BAL   7,PUSH
+         LA    11,0
+         IC    11,0(9)
+         CVD   11,DOBLE
+         ZAP   EMPAQ,DOBLE
+         UNPK  ZONEADO,EMPAQ
+         MVZ   ZONEADO,=XL2'F0F0'
+         MVC   0(2,10),ZONEADO
+         MVC   2(2,10),=CL2', '
+         A     10,=F'4'
+         BAL   7,POP
+         LR    7,6
+         BR    7
+
+
+* REGISTROS:
+* 7: DIRECCION DE RETORNO
+* 10: POSICION DEL STRING
+IMPRIMIR LR    6,7
+         BAL   7,PUSH
+         WTO   MF=(E,WTOBLOCK)
+         LA    10,TEXTO
+         MVC   0(80,10),VACIO
+         BAL   7,POP
+         LR    7,6
+         BR    7
+
+
+* REGISTROS: 
+* 7: DIRECCION DE RETORNO
+* 8: PUNTERO AL NODO DE LINEA
+* 9: PUNTERO AL ELEMENTO DE LA LISTA DE ESTACIONES
+* 10: POSICION DEL STRING
+MOSTRAR  LR    6,7
+         BAL   7,PUSH
+         LA    10,TEXTO
+
+         L     8,LINEAS
+OTRALINE CL    8,=F'-1'
+         BE    NADAMOST
+         MVC   0(7,10),=CL7'LINEA: '
+         A     10,=F'7'
+         L     9,0(8)
+OTRAESTA CLI   0(9),X'FF'
+         BE    FINLINEA
+         BAL   7,TEXTEST
+         A     9,=F'1'
+         B     OTRAESTA
+FINLINEA S     10,=F'2'
+         MVI   0(10),C'.'
+         BAL   7,IMPRIMIR
+         L     8,4(8)
+         B     OTRALINE
+NADAMOST BAL   7,POP
+         LR    7,6
+         BR    7
+
+
 STACK    DS    100FL1
 HEAP     DS    1000FL1
 
@@ -314,16 +365,16 @@ DIRSIG   DS    CL4
 * PUNTERO A LISTA DE LINEAS
 LINEAS   DC    FL1'-1'
 
+DOBLE    DS    D
+EMPAQ    DS    PL2
+ZONEADO  DS    ZL2
 
-ARCH     DCB   DSNAME=FILENAME,LRECL=100,RECFM=FB,MACRF=PM
-FILENAME DC    C'debug.dat',X'00'
-
-ARCH2    DCB   DSNAME=FILENAM2,LRECL=1000,RECFM=FB,MACRF=PM
-FILENAM2 DC    C'debug2.dat',X'00'
-
-ARCH3    DCB   DSNAME=FILENAM3,LRECL=4,RECFM=FB,MACRF=PM
-FILENAM3 DC    C'debug3.dat',X'00'
+WTOBLOCK DC    H'84'
+         DC    H'0'
+TEXTO    DC    80CL1' '
+VACIO    DC    80CL1' '
 
 AUX      DS    CL4
+
          END
 
