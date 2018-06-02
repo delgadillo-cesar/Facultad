@@ -6,9 +6,11 @@ PRUEBA   SUBENTRY BASES=(3)
          LA    4,STACK
          LA    5,HEAP
          BAL   7,LOADDATA
+         CLI   FLAGERR,X'FF'
+         BE    SALIR
          BAL   7,PROCESAR
          BAL   7,MOSTRAR
-         SUBEXIT
+SALIR    SUBEXIT
 
 
 * REGISTROS
@@ -39,33 +41,166 @@ MALLOC   ST    5,AUX
          L     6,AUX
          BR    7         
 
-LOADDATA LR    6,7
+
+* REGISTROS
+* 6: REGISTRO BPF C/S
+* 7: DIRECCION DE RETORNO
+* MEMORIA
+* ZONEADO: ZONEADO DE 2 BYTES CONVERTIDO
+RTOZ     CVD   6,DOBLE
+         ZAP   EMPAQ,DOBLE
+         UNPK  ZONEADO,EMPAQ
+         MVZ   ZONEADO,=XL2'F0F0'
+         BR    7
+
+
+* REGISTROS
+* 7: DIRECCION DE RETORNO
+* 8: PRIMER NIBBLE
+* 9: SEGUNDO NIBBLE
+* MEMORIA
+* EMPAQ: EMPAQUETADO DE 2 BYTES A VALIDAR
+* FLAGERR: 00 --> OK
+*          FF --> ERROR
+VALEMPAQ LA    8,0
+         IC    8,EMPAQ
+         SRDL  8,4
+         SRL   9,28
+         CL    8,=F'9'
+         BH    EMPAQERR
+         CL    9,=F'9'
+         BH    EMPAQERR
+         LA    8,0
+         IC    8,EMPAQ+1
+         SRDL  8,4
+         SRL   9,28
+         CL    8,=F'9'
+         BH    EMPAQERR
+         CL    9,=F'10'
+         BL    EMPAQERR
+         CL    9,=F'15'
+         BH    EMPAQERR
+         MVI   FLAGERR,X'00'
+         BR    7
+EMPAQERR MVI   FLAGERR,X'FF'
+         MVC   TEXTO(20),=C'EMPAQUETADO INVALIDO'
+         BR    7
+
+
+* REGISTROS
+* 7: DIRECCION DE RETORNO
+* MEMORIA
+* EMPAQ: EMPAQUETADO DE 2 BYTES A VALIDAR
+* FLAGERR: 00 --> OK
+*          FF --> ERROR
+VALCANT  CP    EMPAQ,=P'1'
+         BL    CANTERR
+         CP    EMPAQ,=P'20'
+         BH    CANTERR
+         MVI   FLAGERR,X'00'
+         BR    7
+CANTERR  MVI   FLAGERR,X'FF'
+         MVC   TEXTO(31),=C'CANTIDAD DE ESTACIONES INVALIDA'
+         BR    7
+
+
+* REGISTROS: 
+* 7: DIRECCION DE RETORNO
+* 8: ESTACION 1
+* 9: ESTACION 2
+* 12: CANTIDAD MAXIMA DE ESTACIONES
+VALTRAMO LR    6,7
+         BAL   7,PUSH
+         MVC   TEXTO(7),=C'(XX,XX)'
+         LR    6,8
+         BAL   7,RTOZ
+         MVC   TEXTO+1(2),ZONEADO
+         LR    6,9
+         BAL   7,RTOZ
+         MVC   TEXTO+4(2),ZONEADO
+         CL    8,=F'1'
+         BL    TRAMOERR
+         CLR   8,12
+         BH    TRAMOERR
+         CL    9,=F'1'
+         BL    TRAMOERR
+         CLR   9,12
+         BH    TRAMOERR
+         CLR   8,9
+         BE    TRAMOERR
+         MVI   FLAGERR,X'00'
+         BAL   7,POP
+         LR    7,6
+         BR    7
+TRAMOERR MVI   FLAGERR,X'FF'
+         MVC   TEXTO+7(17),=C': TRAMO RECHAZADO'
+         BAL   7,POP
+         LR    7,6
+         BR    7
+
+
+* REGISTROS: 
+* 7: DIRECCION DE RETORNO
+* 12: CANTIDAD MAXIMA DE ESTACIONES
+LOADCANT LR    6,7
          BAL   7,PUSH
          MVI   FLAGERR,X'FF'
-         OPEN  (ARCH,(INPUT))
          GET   ARCH,ARCHGET
-         LA    8,0
-         IC    8,ARCHGET
-         BAL   7,INIVECT
-LEERTRAM GET   ARCH,ARCHGET
-         MVI   FLAGERR,X'FF'
-         LA    8,0
-         IC    8,ARCHGET
+         MVC   EMPAQ,ARCHGET
+         BAL   7,VALEMPAQ
+         CLI   FLAGERR,X'FF'
+         BE    ERRARCH
+         BAL   7,VALCANT
+         CLI   FLAGERR,X'FF'
+         BE    ERRARCH
+         MVC   TEXTO(24),=C'CANTIDAD DE ESTACIONES: '
+         UNPK  ZONEADO,EMPAQ
+         MVZ   ZONEADO,=XL2'F0F0'
+         MVC   TEXTO+24(2),ZONEADO
+         BAL   7,IMPRIMIR
+         ZAP   DOBLE,EMPAQ
+         CVB   8,DOBLE
          LR    12,8
-         GET   ARCH,ARCHGET
-         MVI   FLAGERR,X'00'
+         BAL   7,INIVECT
+         BAL   7,POP
+         LR    7,6
+         BR    7
+
+
+* REGISTROS: 
+* 7: DIRECCION DE RETORNO
+* 8: ESTACION 1
+* 9: ESTACION 2
+* 12: CANTIDAD MAXIMA DE ESTACIONES
+LOADDATA LR    6,7
+         BAL   7,PUSH
+         OPEN  (ARCH,(INPUT))
+         BAL   7,LOADCANT
+         LA    8,0
          LA    9,0
+         MVC   TEXTO(18),=C'CARGANDO TRAMOS...'
+         BAL   7,IMPRIMIR
+LEERTRAM GET   ARCH,ARCHGET
+         IC    8,ARCHGET
+         IC    9,ARCHGET+1
+         BAL   7,VALTRAMO
+         CLI   FLAGERR,X'FF'
+         BE    TRAMRECH
+         BAL   7,LOADTRAM
+         IC    8,ARCHGET+1
          IC    9,ARCHGET
          BAL   7,LOADTRAM
-         LA    8,0
-         IC    8,ARCHGET
-         LR    9,12
-         BAL   7,LOADTRAM
+TRAMRECH BAL   7,IMPRIMIR
          B     LEERTRAM
+ERRARCH  BAL   7,IMPRIMIR
+         MVI   FLAGERR,X'FF'
 FINARCH  CLOSE ARCH
          BAL   7,POP
          LR    7,6
          BR    7
+
+
+
 
          
 * REGISTROS: 
@@ -99,15 +234,15 @@ LOADTRAM LR    6,7
          LA    10,VECEST
          AR    10,11
          MVC   NODOVEC,0(10)
-         CLC   DIRLIST,=F'-1'  LISTA VACIA
+         CLC   DIRLIST,=F'-1'
          BE    NEWNODE
          L     10,DIRLIST
 LEERNODO MVC   NODLIST,0(10)
-         CLC   DIRSIG,=F'-1'   ULTIMO NODO
+         CLC   DIRSIG,=F'-1'
          BE    NEWNODE
          L     10,DIRSIG
          B     LEERNODO
-NEWNODE  L     6,=F'5'        CANTIDAD DE BYTES DEL NODO DE LA LISTA
+NEWNODE  L     6,=F'5'
          BAL   7,MALLOC
          ST    6,1(10)
          STC   9,0(6)
@@ -221,11 +356,15 @@ OMITIRE  BAL   7,POP
 * 10: DIRECCION DEL NODO DE LINEA ACTUAL
 PROCESAR LR    6,7
          BAL   7,PUSH
+         MVC   TEXTO(13),=C'PROCESANDO...'
+         BAL   7,IMPRIMIR
          LA    8,VECEST
          LA    9,20
 OTRO     MVC   NODOVEC,0(8)
          CLI   FLAG,C'N'
          BNE   OMITIR
+         CLC   DIRLIST,=F'-1'
+         BE    OMITIR
          BAL   7,NEWLINEA
          LR    6,8
          BAL   7,PUSH
@@ -242,71 +381,6 @@ OMITIR   A     8,=F'5'
 
 
 
-
-
-
-DUMMY    LR    6,7
-         BAL   7,PUSH
-* (8,1)
-         LA    8,1
-         LA    9,8
-         BAL   7,LOADTRAM
-         LA    8,8
-         LA    9,1
-         BAL   7,LOADTRAM
-* (3,6)
-         LA    8,3
-         LA    9,6
-         BAL   7,LOADTRAM
-         LA    8,6
-         LA    9,3
-         BAL   7,LOADTRAM
-* (4,9)
-         LA    8,4
-         LA    9,9
-         BAL   7,LOADTRAM
-         LA    8,9
-         LA    9,4
-         BAL   7,LOADTRAM
-* (1,7)
-         LA    8,1
-         LA    9,7
-         BAL   7,LOADTRAM
-         LA    8,7
-         LA    9,1
-         BAL   7,LOADTRAM
-* (2,7)
-         LA    8,2
-         LA    9,7
-         BAL   7,LOADTRAM
-         LA    8,7
-         LA    9,2
-         BAL   7,LOADTRAM
-* (1,4)
-         LA    8,1
-         LA    9,4
-         BAL   7,LOADTRAM
-         LA    8,4
-         LA    9,1
-         BAL   7,LOADTRAM
-* (5,4)
-         LA    8,5
-         LA    9,4
-         BAL   7,LOADTRAM
-         LA    8,4
-         LA    9,5
-         BAL   7,LOADTRAM
-* (1,9)
-         LA    8,1
-         LA    9,9
-         BAL   7,LOADTRAM
-         LA    8,9
-         LA    9,1
-         BAL   7,LOADTRAM
-         BAL   7,POP
-         LR    7,6
-         BR    7
-
 * REGISTROS:
 * 7: DIRECCION DE RETORNO
 * 9: PUNTERO AL ELEMENTO DE LA LISTA DE ESTACIONES
@@ -314,12 +388,9 @@ DUMMY    LR    6,7
 * 11: AUX
 TEXTEST  LR    6,7
          BAL   7,PUSH
-         LA    11,0
-         IC    11,0(9)
-         CVD   11,DOBLE
-         ZAP   EMPAQ,DOBLE
-         UNPK  ZONEADO,EMPAQ
-         MVZ   ZONEADO,=XL2'F0F0'
+         LA    6,0
+         IC    6,0(9)
+         BAL   7,RTOZ
          MVC   0(2,10),ZONEADO
          MVC   2(2,10),=CL2', '
          A     10,=F'4'
@@ -349,7 +420,6 @@ IMPRIMIR LR    6,7
 MOSTRAR  LR    6,7
          BAL   7,PUSH
          LA    10,TEXTO
-
          L     8,LINEAS
 OTRALINE CL    8,=F'-1'
          BE    NADAMOST
@@ -399,11 +469,11 @@ WTOBLOCK DC    H'84'
 TEXTO    DC    80CL1' '
 VACIO    DC    80CL1' '
 
-ARCH     DCB   DSNAME=FILENAME,LRECL=1,RECFM=FB,MACRF=GM,EODAD=FINARCH
+ARCH     DCB   DSNAME=FILENAME,LRECL=2,RECFM=FB,MACRF=GM,EODAD=FINARCH
 FILENAME DC    C'tp.dat',X'00'
 
 AUX      DS    CL4
-ARCHGET  DS    X
+ARCHGET  DS    XL2
 FLAGERR  DS    X
          END
 
