@@ -165,6 +165,11 @@ LOADCANT LR    6,7
          BAL   7,POP
          LR    7,6
          BR    7
+ERRARCH  BAL   7,IMPRIMIR
+         MVI   FLAGERR,X'FF'
+         BAL   7,POP
+         LR    7,6
+         BR    7
 
 
 * REGISTROS: 
@@ -176,6 +181,8 @@ LOADDATA LR    6,7
          BAL   7,PUSH
          OPEN  (ARCH,(INPUT))
          BAL   7,LOADCANT
+         CLI   FLAGERR,X'FF'
+         BE    FINARCH
          LA    8,0
          LA    9,0
          MVC   TEXTO(18),=C'CARGANDO TRAMOS...'
@@ -191,16 +198,12 @@ LEERTRAM GET   ARCH,ARCHGET
          IC    9,ARCHGET
          BAL   7,LOADTRAM
 TRAMRECH BAL   7,IMPRIMIR
+         MVI   FLAGERR,X'00'
          B     LEERTRAM
-ERRARCH  BAL   7,IMPRIMIR
-         MVI   FLAGERR,X'FF'
 FINARCH  CLOSE ARCH
          BAL   7,POP
          LR    7,6
          BR    7
-
-
-
 
          
 * REGISTROS: 
@@ -402,12 +405,36 @@ TEXTEST  LR    6,7
 * REGISTROS:
 * 7: DIRECCION DE RETORNO
 * 10: POSICION DEL STRING
-IMPRIMIR LR    6,7
-         BAL   7,PUSH
-         WTO   MF=(E,WTOBLOCK)
+IMPRIMIR WTO   MF=(E,WTOBLOCK)
          LA    10,TEXTO
          MVC   0(80,10),VACIO
-         BAL   7,POP
+         BR    7
+
+
+* REGISTROS: 
+* 6: ITERADOR 1
+* 7: DIRECCION DE RETORNO, ITERADOR 2
+* 9: PUNTERO AL ELEMENTO DE LA LISTA DE ESTACIONES
+* 12: SWAP
+ORDENAR  LR    6,7
+         BAL   7,PUSH
+         LR    7,9
+ITERAR1  CLI   0(7),X'FF'
+         BE    FININT1
+         LR    6,7
+         A     6,=F'1'
+ITERAR2  CLI   0(6),X'FF'
+         BE    FININT2
+         CLC   0(1,7),0(6)
+         BNH   OMIT
+         IC    12,0(7)
+         MVC   0(1,7),0(6)
+         STC   12,0(6)
+OMIT     A     6,=F'1'
+         B     ITERAR2
+FININT2  A     7,=F'1'
+         B     ITERAR1
+FININT1  BAL   7,POP
          LR    7,6
          BR    7
 
@@ -417,15 +444,22 @@ IMPRIMIR LR    6,7
 * 8: PUNTERO AL NODO DE LINEA
 * 9: PUNTERO AL ELEMENTO DE LA LISTA DE ESTACIONES
 * 10: POSICION DEL STRING
+* 11: CONTADOR DE LINEAS
 MOSTRAR  LR    6,7
          BAL   7,PUSH
          LA    10,TEXTO
          L     8,LINEAS
-OTRALINE CL    8,=F'-1'
+         LA    11,0
+OTRALINE A     11,=F'1'
+         CL    8,=F'-1'
          BE    NADAMOST
-         MVC   0(7,10),=CL7'LINEA: '
-         A     10,=F'7'
+         MVC   TEXTO(10),=C'LINEA XX: '
+         LR    6,11
+         BAL   7,RTOZ
+         MVC   TEXTO+6(2),ZONEADO
+         A     10,=F'10'
          L     9,0(8)
+         BAL   7,ORDENAR
 OTRAESTA CLI   0(9),X'FF'
          BE    FINLINEA
          BAL   7,TEXTEST
