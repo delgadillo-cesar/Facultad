@@ -2,12 +2,12 @@
 * 4: TOP STACK
 * 5: TOP HEAP
 * 7: INVOCACION A RUTINA
-PRUEBA   SUBENTRY BASES=(3)
+TP89835  SUBENTRY BASES=(3)
          LA    4,STACK
          LA    5,HEAP
          BAL   7,LOADDATA
-         CLI   FLAGERR,X'FF'
-         BE    SALIR
+         CLI   FLAGERR,X'00'
+         BNE    SALIR
          BAL   7,PROCESAR
          BAL   7,MOSTRAR
 SALIR    SUBEXIT
@@ -144,8 +144,6 @@ TRAMOERR MVI   FLAGERR,X'FF'
 * 12: CANTIDAD MAXIMA DE ESTACIONES
 LOADCANT LR    6,7
          BAL   7,PUSH
-         MVI   FLAGERR,X'FF'
-         GET   ARCH,ARCHGET
          MVC   EMPAQ,ARCHGET
          BAL   7,VALEMPAQ
          CLI   FLAGERR,X'FF'
@@ -159,15 +157,13 @@ LOADCANT LR    6,7
          MVC   TEXTO+24(2),ZONEADO
          BAL   7,IMPRIMIR
          ZAP   DOBLE,EMPAQ
-         CVB   8,DOBLE
-         LR    12,8
+         CVB   9,DOBLE
+         LR    12,9
          BAL   7,INIVECT
-         BAL   7,POP
-         LR    7,6
-         BR    7
+         MVI   FLAGERR,X'00'
+         B     FINLOAD
 ERRARCH  BAL   7,IMPRIMIR
-         MVI   FLAGERR,X'FF'
-         BAL   7,POP
+FINLOAD  BAL   7,POP
          LR    7,6
          BR    7
 
@@ -180,6 +176,8 @@ ERRARCH  BAL   7,IMPRIMIR
 LOADDATA LR    6,7
          BAL   7,PUSH
          OPEN  (ARCH,(INPUT))
+         MVI   FLAGERR,X'FE'
+         GET   ARCH,ARCHGET
          BAL   7,LOADCANT
          CLI   FLAGERR,X'FF'
          BE    FINARCH
@@ -200,7 +198,11 @@ LEERTRAM GET   ARCH,ARCHGET
 TRAMRECH BAL   7,IMPRIMIR
          MVI   FLAGERR,X'00'
          B     LEERTRAM
-FINARCH  CLOSE ARCH
+FINARCH  CLI   FLAGERR,X'FE'
+         BNE   CERRAR
+         MVC   TEXTO(13),=C'ARCHIVO VACIO'
+         BAL   7,IMPRIMIR
+CERRAR   CLOSE ARCH
          BAL   7,POP
          LR    7,6
          BR    7
@@ -208,17 +210,13 @@ FINARCH  CLOSE ARCH
          
 * REGISTROS: 
 * 7: DIRECCION DE RETORNO
-* 8: CANTIDAD DE ESTACIONES
-* 9: VECTOR DE ESTACIONES
-INIVECT  LR    6,7
-         BAL   7,PUSH
-         LA    9,VECEST
-OTRAEST  MVI   0(9),C'N'
-         MVC   1(4,9),=F'-1'
-         A     9,=F'5'
-         BCT   8,OTRAEST
-         BAL   7,POP
-         LR    7,6
+* 8: VECTOR DE ESTACIONES
+* 9: CANTIDAD DE ESTACIONES
+INIVECT  LA    8,VECEST
+OTRAEST  MVI   0(8),C'N'
+         MVC   1(4,8),=F'-1'
+         A     8,=F'5'
+         BCT   9,OTRAEST
          BR    7
 
 
@@ -250,9 +248,6 @@ NEWNODE  L     6,=F'5'
          ST    6,1(10)
          STC   9,0(6)
          MVC   1(4,6),=F'-1'
-         BAL   7,POP
-         LR    7,6
-         BR    7
          BAL   7,POP
          LR    7,6
          BR    7
