@@ -299,7 +299,7 @@ ULTIMO   STC   6,0(11)
 * 12: NODO ACTUAL DE LA LISTA DE RELACIONES
 PROCREL  LR    6,7
          BAL   7,PUSH
-         CL    12,=F'-1'
+OTRAREL  CL    12,=F'-1'
          BE    OMITEREL
          LR    6,12
          BAL   7,PUSH
@@ -311,7 +311,7 @@ PROCREL  LR    6,7
          LR    12,6
          MVC   NODLIST,0(12)
          L     12,DIRSIG
-         BAL   7,PROCREL
+         B     OTRAREL
 OMITEREL BAL   7,POP
          LR    7,6
          BR    7
