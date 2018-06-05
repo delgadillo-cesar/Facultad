@@ -288,8 +288,7 @@ BUSCAR   CLI   0(11),X'FF'
          A     11,=F'1'
          B     BUSCAR
 ULTIMO   STC   6,0(11)
-         A     11,=F'1'
-         MVI   0(11),X'FF'
+         MVI   1(11),X'FF'
          BR    7
 
 
