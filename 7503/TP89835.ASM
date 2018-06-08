@@ -9,7 +9,6 @@ fHandle  resw  1
 ieee754  resb  4
 signo    resb  1
 expexc   resb  1
-exp      resb  1
 mantisa  resb  3
 
 vacio    times 78 db ' '
@@ -17,9 +16,13 @@ texto    resb  78
          db    '$'
 
 flag     resb  1
+flagA    db    'V'
 textI    db    "INFINITO$"
 textNN   db    "NO NUMERICO$"
 text10   db    " * 10 ^ $"
+textV    db    "Archivo vacio$"
+textLI   db    "Longitud de registro invalida$"
+textNA   db    "No existe el archivo tpintel.dat$"
 
 
 segment cogido code
@@ -32,17 +35,73 @@ segment cogido code
          
          call  ABRIR
 OTRO:    call  LEER
-         jc    SALIR
-         cmp   ax,4
-         jne   SALIR
          call  PARSEAR
          call  PROCESAR
          call  PSALTO
-         jmp    OTRO
+         jmp   OTRO
 
-SALIR:   call  CERRAR
+
+SALIR:   
          mov   ah,4ch
          int   21h
+
+
+; ABRE EL ARCHIVO PARA LECTURA
+ABRIR:
+         mov   al,0
+         mov   dx,fileName
+         mov   ah,3dh
+         int   21h
+         jc    ERROPEN
+         mov   [fHandle],ax
+         ret
+
+ERROPEN:
+         mov   dx,textNA
+         mov   ah,09h
+         int   21h
+         jmp   SALIR
+
+
+; LEE UN REGISTRO DEL ARCHIVO
+LEER:
+         mov   bx,[fHandle]
+         mov   cx,4
+         mov   dx,ieee754
+         mov   ah,3fh
+         int   21h
+         jc    ERRLECT
+         cmp   ax,4
+         jne   ERRLECT
+         mov   byte[flagA],'L'
+         ret
+
+ERRLECT:
+         cmp   ax,0
+         je    FINARCH
+         mov   dx,textLI
+         mov   ah,09h
+         int   21h
+         jmp   NOVACIO
+FINARCH: 
+         cmp   byte[flagA],'V'
+         jne   NOVACIO
+         mov   dx,textV
+         mov   ah,09h
+         int   21h
+NOVACIO: call  CERRAR
+         jmp   SALIR
+         
+
+
+
+; CIERRA EL ARCHIVO
+CERRAR:
+         mov   bx,[fHandle]
+         mov   ah,3Eh
+         int   21h
+         ret
+
 
 ; INTERPRETA EL BPfloat IEEE754 Y SEPARA SUS PARTES
 ; BIT 0:      SIGNO
@@ -54,7 +113,6 @@ PARSEAR:
          shr   ax,7
          mov   [signo],ah
          mov   [expexc],al
-
          mov   ah,[ieee754+1]
          mov   al,[ieee754+2]
          shl   ax,1
@@ -64,8 +122,43 @@ PARSEAR:
          shl   ax,1
          mov   [mantisa+1],ah
          mov   [mantisa+2],al
-         
          ret
+
+
+;FLAG = 00h: EXPEXC = 0
+;       FFh: EXPEXC <> 0
+EXPCERO:
+         mov   byte[flag],00h
+         cmp   byte[expexc],00h
+         je    EXPZERO
+         mov   byte[flag],0FFh
+EXPZERO: ret
+         
+
+
+;FLAG = 00h: EXPEXC = FFh
+;       FFh: EXPEXC <> FFh
+EXPMAX:
+         mov   byte[flag],00h
+         cmp   byte[expexc],0FFh
+         je    EXPMAXI
+         mov   byte[flag],0FFh
+EXPMAXI: ret
+
+
+;FLAG = 00h: MANTISA = 000000h
+;       FFh: EXPEXC <> 000000h
+MANCERO:
+         mov   byte[flag],0FFh
+         mov   ax,[mantisa]
+         cmp   ax,00h
+         jne   NOCERO
+         mov   al,byte[mantisa+2]
+         cmp   al,00h
+         jne   NOCERO         
+         mov   byte[flag],00h
+NOCERO:  ret
+
 
 ; ANALIZA EL EXPEXC Y LA MANTISA PARA DETERMINAR QUE TIPO DE NUMERO ES:
 ; NORMAL: EXPEXC ENTRE 00000001 Y 11111110
@@ -78,11 +171,9 @@ PROCESAR:
          jne   EVAL1
          call  SUBNORMAL
          ret
-         
 EVAL1:   call  EXPMAX
          cmp   byte[flag],00h
          jne   NUMERO
-
          call  MANCERO
          cmp   byte[flag],00h
          jne   NONUM
@@ -90,7 +181,6 @@ EVAL1:   call  EXPMAX
          ret
 NONUM:   call  NONUMBER
          ret
-
 NUMERO:  call  NORMAL
          ret
 
@@ -136,71 +226,6 @@ NONUMBER:
          int   21h
          ret
 
-
-;FLAG = 00h: EXPEXC = 0
-;       FFh: EXPEXC <> 0
-EXPCERO:
-         mov   byte[flag],00h
-         cmp   byte[expexc],00h
-         je    EXPZERO
-         mov   byte[flag],0FFh
-EXPZERO: ret
-         
-
-
-;FLAG = 00h: EXPEXC = FFh
-;       FFh: EXPEXC <> FFh
-EXPMAX:
-         mov   byte[flag],00h
-         cmp   byte[expexc],0FFh
-         je    EXPMAXI
-         mov   byte[flag],0FFh
-EXPMAXI: ret
-
-
-;FLAG = 00h: MANTISA = 000000h
-;       FFh: EXPEXC <> 000000h
-MANCERO:
-         mov   byte[flag],0FFh
-         mov   ax,[mantisa]
-         cmp   ax,00h
-         jne   NOCERO
-         mov   al,byte[mantisa+2]
-         cmp   al,00h
-         jne   NOCERO         
-         mov   byte[flag],00h
-NOCERO:  ret
-
-
-
-
-ABRIR:
-         mov al,0              ;tipo de acceso
-         mov dx,fileName       ;nombre del archivo
-         mov ah,3dh            ;servicio para abrir archivo 3dh
-         int 21h               ;se abre el archivo
-         ;jc erropen            ;Carry <> 0
-         mov [fHandle],ax      ;en ax queda el handle del archivo
-
-         ret
-
-LEER:
-         mov   bx,[fHandle]
-         mov   cx,4
-         mov   dx,ieee754
-         mov   ah,3fh
-         int   21h
-      
-         ret
-
-
-
-CERRAR:
-         mov   bx,[fHandle]    ;handle del archivo
-         mov   ah,3Eh           ;servicio
-         int   21h              ;cierra archivo
-
-         ret
 
 
 ; REPRECENTA EN ASCII UNA CADENA BINARIA
@@ -289,7 +314,20 @@ PMANTISA:
          mov   ax,0
          mov   al,[mantisa+2]
          call  CONVERIT
+         dec   si
          mov   byte[texto+si],'$'
+
+         mov   al,[expexc]
+         sub   al,127
+  
+         mov   bx,0
+         cmp   al,0
+         jng   QUITAR0
+         mov   bl,al
+         dec   bx
+QUITAR0: dec   si
+         call  QCEROD
+
          call  IMPRIMIR
          ret
 
@@ -313,7 +351,46 @@ PEXPO:
          inc   si
 EXPPOS:
          mov   ah,0
-         call  CONVERIT
+         call  CEQCEROI
          mov   byte[texto+si],'$'
          call  IMPRIMIR
          ret
+
+
+; CONVIERTE EL EXPONENTE QUITANDO CEROS A DERECHA
+; TEXTO: STRING QUE CONTIENE LA CONVERSION
+; SI: POSICION ACTUAL DEL CURSOR SOBRE EL STRING.
+CEQCEROI:
+         mov   cx,8
+         mov   byte[flag],0FFh
+BTOSE:
+         shl   ax,1
+         cmp   ah,1
+         jne   CONTINU
+         mov   byte[flag],00h
+CONTINU: cmp   byte[flag],00h
+         jne   OMITIR0
+         add   ah,30h
+         mov   [texto+si],ah
+         inc   si
+OMITIR0: mov   ah,0
+         cmp   cx,2
+         jne   CICLO
+         mov   byte[flag],00h
+CICLO:   loop  BTOSE
+         ret
+
+
+; QUITA CEROS A DERECHA HASTA  ENCONTRAR UN 1 O ALCANZAR LA PRESICION DESEADA
+; TEXTO: STRING A QUITAR CEROS
+; BX: PRESICION DESEADA
+; SI: POSICION ACTUAL DEL CURSOR SOBRE EL STRING. DEBE ESTAR EN EL FIN DE LA PALABRA
+QCEROD:
+         cmp   si,bx
+         jng   FINQ
+         cmp   byte[texto+si],31h
+         je    FINQ
+         mov   byte[texto+si],'$'
+         dec   si
+         jmp   QCEROD
+FINQ:    ret
