@@ -17,12 +17,9 @@ texto    resb  78
          db    '$'
 
 flag     resb  1
-textN    db    "NORMAL$"
-textS    db    "SUBNORMAL$"
 textI    db    "INFINITO$"
 textNN   db    "NO NUMERICO$"
 text10   db    " * 10 ^ $"
-textflag db    "LLEGA HASTA ACA$"
 
 
 segment cogido code
@@ -40,13 +37,17 @@ OTRO:    call  LEER
          jne   SALIR
          call  PARSEAR
          call  PROCESAR
-         jp    OTRO
+         call  PSALTO
+         jmp    OTRO
 
 SALIR:   call  CERRAR
          mov   ah,4ch
          int   21h
 
-
+; INTERPRETA EL BPfloat IEEE754 Y SEPARA SUS PARTES
+; BIT 0:      SIGNO
+; BIT 1 A 8:  EXPONENTE EN EXCESO
+; BIT 9 A 32: MANTISA
 PARSEAR:
          mov   ah,[ieee754]
          mov   al,[ieee754+1]
@@ -66,7 +67,11 @@ PARSEAR:
          
          ret
 
-
+; ANALIZA EL EXPEXC Y LA MANTISA PARA DETERMINAR QUE TIPO DE NUMERO ES:
+; NORMAL: EXPEXC ENTRE 00000001 Y 11111110
+; SUBNORMAL: EXPEXC = 00000000
+; INFINITO: EXPEXC = 11111111 Y MANTISA =  000000h
+; NAN: EXPEXC = 11111111 Y MANTISA <>  000000h
 PROCESAR:
          call  EXPCERO
          cmp   byte[flag],00h
@@ -90,49 +95,45 @@ NUMERO:  call  NORMAL
          ret
 
 
-
+; PROCESA Y MUESTRA POR PANTALLA UN NUMERO NORMAL
 NORMAL:
          call  PSIGNO
          call  PUNOCOMA
          call  PMANTISA
          call  PDIEZALA
          call  PEXPO
-         call  PSALTO
          ret
 
 
+; PROCESA Y MUESTRA POR PANTALLA UN NUMERO SUBNORMAL
 SUBNORMAL:
          call  MANCERO
          cmp   byte[flag],00h
          jne   NUMSUB
-         mov   byte[texto],'0'
+         mov   word[texto],'0$'
          call  IMPRIMIR
-         call  PSALTO
          ret
 NUMSUB:
          call  PSIGNO
          call  PCEROCOM
          call  PMANTISA
-         call  PSALTO
          ret
 
          
+; PROCESA Y MUESTRA POR PANTALLA EL INFINITO
 INFINITO:
          call  PSIGNO
          mov   dx,textI
          mov   ah,09h
          int   21h
-
-         call  PSALTO
          ret
 
-         
+
+; MUESTRA POR PANTALLA UN MENSAJE DE NAN
 NONUMBER:
          mov   dx,textNN
          mov   ah,09h
          int   21h
-
-         call  PSALTO
          ret
 
 
@@ -306,7 +307,7 @@ PEXPO:
          mov   al,[expexc]
          sub   al,127
          cmp   al,0
-         jnl    EXPPOS
+         jnl   EXPPOS
          neg   al
          mov   byte[texto],'-'
          inc   si
