@@ -103,11 +103,47 @@ CERRAR:
          ret
 
 
+CONVERH:
+         mov   cx,2
+CICLOH:  mov   ah,0
+         shl   ax,4
+         cmp   ah,0Ah
+         jnl   LETRA
+         add   ah,30h
+         jmp   IMPH
+LETRA    add   ah,37h
+IMPH:    mov   byte[texto+si],ah
+         inc   si
+         loop  CICLOH
+         mov   byte[texto+si],'$'
+         ret
+
+PIEEE:
+         mov   si,0
+         mov   ax,0
+         mov   al,[ieee754]
+         call  CONVERH
+         call  IMPRIMIR
+         mov   al,[ieee754+1]
+         call  CONVERH
+         call  IMPRIMIR
+         mov   al,[ieee754+2]
+         call  CONVERH
+         call  IMPRIMIR
+         mov   al,[ieee754+3]
+         call  CONVERH
+         mov   word[texto+si],': '
+         add   si,2
+         mov   word[texto+si],'$ '
+         call  IMPRIMIR
+         ret
+
 ; INTERPRETA EL BPfloat IEEE754 Y SEPARA SUS PARTES
 ; BIT 0:      SIGNO
 ; BIT 1 A 8:  EXPONENTE EN EXCESO
 ; BIT 9 A 32: MANTISA
 PARSEAR:
+         call  PIEEE
          mov   ah,[ieee754]
          mov   al,[ieee754+1]
          shr   ax,7
