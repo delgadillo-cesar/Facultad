@@ -6,7 +6,7 @@
 #define ERROR 1
 
 #define ISTORE 54
-#define ILOAD  31
+#define ILOAD  21
 #define BIPUSH 16
 #define DUP    89
 #define IAND   126
@@ -14,7 +14,7 @@
 #define IOR    128
 #define IREM   112
 #define INEG   116
-#define IDIV   109
+#define IDIV   108
 #define IADD   96
 #define IMUL   104
 #define ISUB   100
@@ -36,8 +36,8 @@ void instruccion_isub(jvm_t *la_jvm);
 
 
 int jvm_crear(jvm_t *la_jvm, int* memoria, size_t tamanio_memoria) {
-    pila_crear(&(la_jvm->pila), sizeof(char));
-//    la_jvm->memoria = malloc(tamanio_memoria * sizeof(int));
+//    pila_crear(&(la_jvm->pila), sizeof(char));
+    pila_crear(&(la_jvm->pila), sizeof(uint32_t));
     la_jvm->memoria = memoria;
     la_jvm->tamanio_memoria = tamanio_memoria;
 
@@ -50,7 +50,7 @@ int jvm_crear(jvm_t *la_jvm, int* memoria, size_t tamanio_memoria) {
 
 
 int jvm_procesar(jvm_t *la_jvm, programa_t *programa) {
-    char instruccion;
+    uint8_t instruccion;
 
     fprintf(stdout, "Bytecode trace\n");
 
@@ -103,42 +103,40 @@ int jvm_procesar(jvm_t *la_jvm, programa_t *programa) {
         }
     }
 
-//    variables_dump(la_jvm);
-
     return OK;
 }
 
 int jvm_finalizar(jvm_t *la_jvm) {
     pila_destruir(&(la_jvm->pila));
-//    free(la_jvm->memoria);
     return OK;
 }
 
 
 void instruccion_istore(jvm_t *la_jvm, char opeando) {
     fprintf(stdout, "istore\n");
-    char elemento;
+    int32_t elemento;
 
     pila_sacar(&(la_jvm->pila), &elemento);
-    (la_jvm->memoria)[(int)opeando] = (int) elemento;
+    (la_jvm->memoria)[(int)opeando] = elemento;
 }
 
 void instruccion_iload(jvm_t *la_jvm, char operando) {
     fprintf(stdout, "iload\n");
-    int elemento;
+    int32_t elemento;
 
-    elemento = (int) ((la_jvm->memoria)[(int)operando]);
-    pila_sacar(&(la_jvm->pila), &elemento);
+    elemento = (la_jvm->memoria)[(int)operando];
+    pila_agregar(&(la_jvm->pila), &elemento);
 }
 
 void instruccion_bipush(jvm_t *la_jvm, char operando) {
+    int32_t dato = operando;
     fprintf(stdout, "bipush\n");
-    pila_agregar(&(la_jvm->pila), &operando);
+    pila_agregar(&(la_jvm->pila), &dato);
 }
 
 void instruccion_dup(jvm_t *la_jvm) {
     fprintf(stdout, "dup\n");
-    char elemento;
+    int32_t elemento;
 
     pila_sacar(&(la_jvm->pila), &elemento);
     pila_agregar(&(la_jvm->pila), &elemento);
@@ -147,7 +145,7 @@ void instruccion_dup(jvm_t *la_jvm) {
 
 void instruccion_iand(jvm_t *la_jvm) {
     fprintf(stdout, "iand\n");
-    char elemento, elemento2, operacion_binaria;
+    int32_t elemento, elemento2, operacion_binaria;
 
     pila_sacar(&(la_jvm->pila), &elemento);
     pila_sacar(&(la_jvm->pila), &elemento2);
@@ -158,7 +156,7 @@ void instruccion_iand(jvm_t *la_jvm) {
 
 void instruccion_ixor(jvm_t *la_jvm) {
     fprintf(stdout, "ixor\n");
-    char elemento, elemento2, operacion_binaria;
+    int32_t elemento, elemento2, operacion_binaria;
 
     pila_sacar(&(la_jvm->pila), &elemento);
     pila_sacar(&(la_jvm->pila), &elemento2);
@@ -169,7 +167,7 @@ void instruccion_ixor(jvm_t *la_jvm) {
 
 void instruccion_ior(jvm_t *la_jvm) {
     fprintf(stdout, "ior\n");
-    char elemento, elemento2, operacion_binaria;
+    int32_t elemento, elemento2, operacion_binaria;
 
     pila_sacar(&(la_jvm->pila), &elemento);
     pila_sacar(&(la_jvm->pila), &elemento2);
@@ -180,72 +178,63 @@ void instruccion_ior(jvm_t *la_jvm) {
 
 void instruccion_irem(jvm_t *la_jvm) {
     fprintf(stdout, "irem\n");
-    char elemento, elemento2;
-    int resto;
+    int32_t elemento, elemento2, resto;
 
     pila_sacar(&(la_jvm->pila), &elemento2);
     pila_sacar(&(la_jvm->pila), &elemento);
-    resto = (int)elemento % (int)elemento2;
-    elemento = (char) resto;
-    pila_agregar(&(la_jvm->pila), &elemento);
+    resto = elemento % elemento2;
+    pila_agregar(&(la_jvm->pila), &resto);
 }
 
 void instruccion_ineg(jvm_t *la_jvm) {
     fprintf(stdout, "ineg\n");
-    char elemento, operacion_binaria;
+    int32_t elemento, operacion_binaria;
 
     pila_sacar(&(la_jvm->pila), &elemento);
     operacion_binaria = ~elemento;
+    operacion_binaria++;
 
     pila_agregar(&(la_jvm->pila), &operacion_binaria);
 }
 
 void instruccion_idiv(jvm_t *la_jvm) {
     fprintf(stdout, "idiv\n");
-    char elemento, elemento2;
-    int division;
+    int32_t elemento, elemento2, division;
 
     pila_sacar(&(la_jvm->pila), &elemento2);
     pila_sacar(&(la_jvm->pila), &elemento);
-    division = (int)elemento / (int)elemento2;
-    elemento = (char) division;
-    pila_agregar(&(la_jvm->pila), &elemento);
+    division = elemento / elemento2;
+    pila_agregar(&(la_jvm->pila), &division);
 }
 
 void instruccion_iadd(jvm_t *la_jvm) {
     fprintf(stdout, "iadd\n");
 
-    char elemento, elemento2;
-    int suma;
+    int32_t elemento, elemento2, suma;
 
     pila_sacar(&(la_jvm->pila), &elemento2);
     pila_sacar(&(la_jvm->pila), &elemento);
-    suma = (int)elemento + (int)elemento2;
-    elemento = (char) suma;
-    pila_agregar(&(la_jvm->pila), &elemento);
+    suma = elemento + elemento2;
+    pila_agregar(&(la_jvm->pila), &suma);
 }
 
 void instruccion_imul(jvm_t *la_jvm) {
     fprintf(stdout, "imul\n");
-    char elemento, elemento2;
-    int multiplicacion;
+    int32_t elemento, elemento2, multiplicacion;
 
     pila_sacar(&(la_jvm->pila), &elemento2);
     pila_sacar(&(la_jvm->pila), &elemento);
-    multiplicacion = (int)elemento * (int)elemento2;
-    elemento = (char) multiplicacion;
-    pila_agregar(&(la_jvm->pila), &elemento);
+    multiplicacion = elemento * elemento2;
+    pila_agregar(&(la_jvm->pila), &multiplicacion);
 }
 
 void instruccion_isub(jvm_t *la_jvm) {
     fprintf(stdout, "isub\n");
-    char elemento, elemento2;
-    int resta;
+    int32_t elemento, elemento2, resta;
 
     pila_sacar(&(la_jvm->pila), &elemento2);
     pila_sacar(&(la_jvm->pila), &elemento);
-    resta = (int)elemento - (int)elemento2;
-    elemento = (char) resta;
-    pila_agregar(&(la_jvm->pila), &elemento);
+    resta = elemento - elemento2;
+    pila_agregar(&(la_jvm->pila), &resta);
 }
 

@@ -21,11 +21,11 @@ int conexion_crear_cliente(conexion_t *conexion, char* puerto, char* host);
 
 int conexion_aceptar_cliente(conexion_t *conexion);
 
-int conexion_enviar_mensaje(conexion_t *conexion, void* mensaje, uint32_t longitud);
+int conexion_enviar_msg(conexion_t *conexion, void* msg, int32_t tamanio);
 
-int conexion_recibir_mensaje(conexion_t *conexion, void* mensaje);
+int conexion_recibir_msg(conexion_t *conexion, void* mensaje);
 
-int conexion_recibir_mensaje2(conexion_t *conexion, void** mensaje);
+int conexion_recibir_msg2(conexion_t *conexion, void** mensaje);
 
 void conexion_destruir(conexion_t *conexion);
 

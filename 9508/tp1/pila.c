@@ -44,7 +44,7 @@ int pila_sacar(pila_t* la_pila, void* elemento) {
     return OK;
 }
 
-void pila_destruir(pila_t* la_pila){
+void pila_destruir(pila_t* la_pila) {
     nodo_pila *aux;
 
     while (la_pila->ultimo) {
