@@ -1,11 +1,9 @@
 #include "FactoryCache.h"
 #include "CacheDirecta.h"
-#include "ReemplazoFifo.h"
-#include "ReemplazoLru.h"
+#include "CacheAsociativa.h"
 
 FactoryCache::FactoryCache(){
 }
-
 
 Cache* FactoryCache::crear_cache(filebuf especificaciones) {
     map<string, string> configuracion;
@@ -32,6 +30,13 @@ Cache* FactoryCache::crear_cache(filebuf especificaciones) {
         return this->crear_cache_directa(configuracion);
     }
 
+    if (configuracion["cache type"] == "associative-fifo") {
+        return this->crear_cache_asociativa(configuracion, TIPO_FIFO);
+    }
+
+    if (configuracion["cache type"] == "associative-lru") {
+        return this->crear_cache_asociativa(configuracion, TIPO_LRU);
+    }
     return nullptr;
 }
 
@@ -41,19 +46,19 @@ Cache* FactoryCache::crear_cache_directa (map<string, string> config) {
 }
 
 Cache* FactoryCache::crear_cache_asociativa(map<string, string> config,
-                                            TipoReemplazo *tipo) {
-//associative-fifo
+                                            int tipo) {
     if (config["cache type"] == "associative-fifo") {
-        ReemplazoFifo fifo;
-        Cache* cache = new CacheAsociativa(config, move(fifo));
+        Cache* cache = new CacheAsociativa(config, TIPO_FIFO);
+        return cache;
     }
 
     if (config["cache type"] == "associative-lru") {
+        Cache* cache = new CacheAsociativa(config, TIPO_LRU);
+        return cache;
     }
 
     return nullptr;
 }
-
 
 FactoryCache::~FactoryCache(){
 }

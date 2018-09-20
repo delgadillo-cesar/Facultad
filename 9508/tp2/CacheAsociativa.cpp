@@ -1,43 +1,49 @@
 #include "CacheAsociativa.h"
 #include <iostream>
+#include "ReemplazoFifo.h"
+#include "ReemplazoLru.h"
 
-CacheAsociativa::CacheAsociativa(int tamanio, int tamanio_liena, bool debug, TipoReemplazo *tipo)
-               : Cache(tamanio, tamanio_liena, debug) {
-    this->tipo = tipo;
-    this->tipo->set_cantidad_elementos(tamanio / tamanio_liena);
-}
 
-int CacheAsociativa::buscar_direccion(uint32_t una_direccion) {
-    std::set<uint32_t>::iterator it;
-    it = this->memoria.find(una_direccion);
+static const int MISS = 0;
+static const int HIT = 1;
+static const int OK = 0;
+static const int ERROR = -1;
 
-    if (it != this->memoria.end()) {
-    } else {
-        this->agregar_direccion(una_direccion);
-    }
+CacheAsociativa::CacheAsociativa(map<string, string> config, int tipo_reemp) : Cache(config) {
+    if (tipo_reemp == TIPO_FIFO)
+        this->tipo = new ReemplazoFifo();
 
-    return 0;
-}
+    if (tipo_reemp == TIPO_LRU)
+        this->tipo = new ReemplazoLru();
 
-void CacheAsociativa::agregar_direccion(uint32_t una_direccion) {
-    uint32_t quitar;
-
-    this->memoria.insert(una_direccion);
-    quitar = this->tipo->agregar_direccion(una_direccion);
-
-    if (!quitar) {
-        this->memoria.erase(quitar);
-    }
+    this->cantidad_elementos = tamanio / tamanio_linea;
 }
 
 int CacheAsociativa::buscar_en_memoria(uint32_t un_tag) {
-    return 0;
+    std::set<uint32_t>::iterator it;
+    it = this->memoria.find(un_tag);
+
+    if (it != this->memoria.end()) {
+        this->tipo->actualizar_tag(un_tag);
+        return HIT;
+    } else {
+        return MISS;
+    }
 }
 
 int CacheAsociativa::agregar_en_memoria(uint32_t un_tag) {
-    return 0;
+    this->memoria.insert(un_tag);
+
+    this->tipo->agregar_tag(un_tag);
+
+    if (this->memoria.size() > this->cantidad_elementos) {
+        uint32_t quitar = this->tipo->tag_para_quitar();
+        this->memoria.erase(quitar);
+    }
+
+    return OK;
 }
 
 CacheAsociativa::~CacheAsociativa() {
-    //dtor
+    delete this->tipo;//dtor
 }

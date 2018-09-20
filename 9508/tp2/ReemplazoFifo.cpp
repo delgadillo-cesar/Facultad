@@ -2,22 +2,21 @@
 #include <iostream>
 
 ReemplazoFifo::ReemplazoFifo() : TipoReemplazo() {
-//    this->cantidad = cant_elementos;
 }
 
-uint32_t ReemplazoFifo::agregar_direccion(uint32_t una_direccion) {
-    uint32_t quitar = 0;
+void ReemplazoFifo::agregar_tag(uint32_t un_tag) {
+    this->cola.push_back(un_tag);
+}
 
-    this->cola.push_back(una_direccion);
+void ReemplazoFifo::actualizar_tag(uint32_t un_tag) {
+}
 
-    if ((int)this->cola.size() > this->cantidad) {
-        quitar = this->cola.front();
-        this->cola.pop_front();
-    }
+uint32_t ReemplazoFifo::tag_para_quitar() {
+    uint32_t quitar = this->cola.front();
+    this->cola.pop_front();
 
     return quitar;
 }
 
 ReemplazoFifo::~ReemplazoFifo() {
-    //dtor
 }

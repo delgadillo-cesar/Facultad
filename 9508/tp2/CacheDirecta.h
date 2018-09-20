@@ -8,7 +8,7 @@ class CacheDirecta : public Cache {
     public:
         CacheDirecta(map<string, string> config);
         ~CacheDirecta();
-        virtual int buscar_direccion(uint32_t una_direccion);
+//        virtual int buscar_direccion(uint32_t una_direccion);
 
     protected:
 

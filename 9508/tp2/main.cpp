@@ -16,33 +16,6 @@ static const int OK = 0;
 static const int ERROR = 1;
 
 
-int cargar_configuracion (map<string, string>& configuracion) {
-    filebuf fb;
-    if (!fb.open ("config.cfg",ios::in)) {
-        return ERROR;
-    }
-
-    istream arch(&fb);
-    char leido = arch.get();
-    string buffer = "";
-
-    while (arch) {
-        if (leido == '\n' || !arch) {
-            int pos_separador = buffer.find("=");
-            string clave = buffer.substr(0, pos_separador);
-            string valor = buffer.substr(pos_separador + 1,
-                                         buffer.length() - pos_separador);
-            configuracion[clave] = valor;
-            buffer = "";
-        } else {
-            buffer += leido;
-        }
-        leido = arch.get();
-    }
-    return OK;
-}
-
-
 int main(int argc, char* argv[]) {
     filebuf fb_e;
     if (!fb_e.open ("config.cfg",ios::in)) {
@@ -59,7 +32,7 @@ int main(int argc, char* argv[]) {
 
     Cpu cpu(move(fb), cache);
     cpu.procesar();
-
+    cache->impimir_informe();
     delete cache;
 
     return 0;

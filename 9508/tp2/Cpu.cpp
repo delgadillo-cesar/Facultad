@@ -33,7 +33,7 @@ void Cpu::procesar() {
 
         leido = arch.get();
         if (leido == '\n' || !arch) {
-            if (this->procesar_direccion(buffer) == ERROR_CACHE) {
+            if (this->procesar_direccion(buffer) == ERROR) {
                 cerr << "Abortando" << endl;
                 break;
             }
@@ -56,7 +56,7 @@ int Cpu::procesar_direccion(uint32_t una_direccion) {
     }
 
     int result = this->cache->buscar_direccion(una_direccion);
-    if ( result == -ERROR_CACHE) {
+    if ( result == ERROR_CACHE) {
         return ERROR;
     }
 

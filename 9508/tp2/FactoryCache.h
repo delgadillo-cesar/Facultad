@@ -17,7 +17,7 @@ class FactoryCache
         Cache* crear_cache(filebuf especificaciones);
         Cache* crear_cache_directa (map<string, string> config);
         Cache* crear_cache_asociativa(map<string, string> configuracion,
-                                      TipoReemplazo *tipo);
+                                      int tipo);
 
     protected:
 

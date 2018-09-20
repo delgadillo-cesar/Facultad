@@ -8,7 +8,9 @@ class ReemplazoFifo : public TipoReemplazo {
     public:
         ReemplazoFifo();
         ~ReemplazoFifo();
-        virtual uint32_t agregar_direccion(uint32_t una_direccion) override;
+        virtual void agregar_tag(uint32_t un_tag);
+        virtual void actualizar_tag(uint32_t un_tag);
+        virtual uint32_t tag_para_quitar();
 
     protected:
 
