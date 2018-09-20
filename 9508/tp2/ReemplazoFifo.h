@@ -6,15 +6,14 @@ using namespace std;
 
 class ReemplazoFifo : public TipoReemplazo {
     public:
-        ReemplazoFifo(int cant_elementos);
+        ReemplazoFifo();
         ~ReemplazoFifo();
-        virtual string agregar_direccion(string una_direccion) override;
+        virtual uint32_t agregar_direccion(uint32_t una_direccion) override;
 
     protected:
 
     private:
-        int cantidad;
-        deque<string> cola;
+        deque<uint32_t> cola;
 };
 
 #endif // REEMPLAZOFIFO_H

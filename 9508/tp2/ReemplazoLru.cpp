@@ -2,20 +2,20 @@
 #include <iostream>
 #include <algorithm>
 
-ReemplazoLru::ReemplazoLru(int algo) : TipoReemplazo() {
+ReemplazoLru::ReemplazoLru() : TipoReemplazo() {
     //ctor
 }
 
-string ReemplazoLru::agregar_direccion(string una_direccion) {
+uint32_t ReemplazoLru::agregar_direccion(uint32_t una_direccion) {
     cout << "Implementacion en LRU" << endl;
 
     this->buscar(una_direccion);
 
 //    this->cola.push_back(una_direccion);
-    return "";
+    return 0;
 }
 
-int ReemplazoLru::buscar(string una_direccion) {
+int ReemplazoLru::buscar(uint32_t una_direccion) {
 //    deque<string>::iterator it = find(this->cola.begin(), this->cola.end(), una_direccion);
 //    int *it = find(this->cola.begin(), this->cola.end(), una_direccion);
 //    if(it!=this->cola.end()) {

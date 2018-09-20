@@ -1,12 +1,12 @@
 #include "ReemplazoFifo.h"
 #include <iostream>
 
-ReemplazoFifo::ReemplazoFifo(int cant_elementos) : TipoReemplazo() {
-    this->cantidad = cant_elementos;
+ReemplazoFifo::ReemplazoFifo() : TipoReemplazo() {
+//    this->cantidad = cant_elementos;
 }
 
-string ReemplazoFifo::agregar_direccion(string una_direccion) {
-    string quitar = "";
+uint32_t ReemplazoFifo::agregar_direccion(uint32_t una_direccion) {
+    uint32_t quitar = 0;
 
     this->cola.push_back(una_direccion);
 

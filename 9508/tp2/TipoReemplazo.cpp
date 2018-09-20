@@ -1,9 +1,12 @@
 #include "TipoReemplazo.h"
 
 TipoReemplazo::TipoReemplazo() {
-    //ctor
+    this->cantidad = 0;
+}
+
+void TipoReemplazo::set_cantidad_elementos(uint32_t cantidad) {
+    this->cantidad = cantidad;
 }
 
 TipoReemplazo::~TipoReemplazo() {
-    //dtor
 }

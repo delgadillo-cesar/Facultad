@@ -3,6 +3,9 @@
 #include <iostream>
 #include <stdio.h>
 #include <inttypes.h>
+#include "Cache.h"
+#include <fstream>
+
 
 using namespace std;
 
@@ -10,15 +13,16 @@ using namespace std;
 class Cpu
 {
     public:
-        Cpu(FILE* archivo);
+        Cpu(filebuf archivo, Cache *cache);
         void procesar();
         ~Cpu();
 
     protected:
 
     private:
-        FILE* archivo;
-        void procesar_direccion(uint32_t una_direccion);
+        filebuf archivo;
+        Cache* cache;
+        int procesar_direccion(uint32_t una_direccion);
 };
 
 #endif // CPU_H

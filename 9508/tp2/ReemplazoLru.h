@@ -6,14 +6,14 @@ using namespace std;
 
 class ReemplazoLru : public TipoReemplazo {
     public:
-        ReemplazoLru(int algo);
+        ReemplazoLru();
         ~ReemplazoLru();
-        virtual string agregar_direccion(string una_direccion) override;
+        virtual uint32_t agregar_direccion(uint32_t una_direccion) override;
 
     protected:
 
     private:
-        int buscar(string una_direccion);
+        int buscar(uint32_t una_direccion);
 };
 
 #endif // REEMPLAZOLRU_H

@@ -6,14 +6,19 @@ using namespace std;
 
 class CacheDirecta : public Cache {
     public:
-        CacheDirecta(int tamanio, int tamanio_liena);
+        CacheDirecta(map<string, string> config);
         ~CacheDirecta();
-        virtual int buscar_direccion(string una_direccion);
-        virtual void agregar_direccion(string una_direccion);
+        virtual int buscar_direccion(uint32_t una_direccion);
 
     protected:
 
     private:
+        int cant_bloques;
+        map<uint32_t, uint32_t> memoria;
+
+        virtual int buscar_en_memoria(uint32_t un_tag);
+        virtual int agregar_en_memoria(uint32_t un_tag);
+
 };
 
 #endif // CACHEDIRECTA_H

@@ -8,16 +8,20 @@ using namespace std;
 
 class CacheAsociativa : public Cache {
     public:
-        CacheAsociativa(int tamanio, int tamanio_liena, TipoReemplazo *tipo);
+        CacheAsociativa(int tamanio, int tamanio_liena, bool debug, TipoReemplazo *tipo);
         ~CacheAsociativa();
-        virtual int buscar_direccion(string una_direccion);
-        virtual void agregar_direccion(string una_direccion);
+        virtual int buscar_direccion(uint32_t una_direccion);
+        virtual void agregar_direccion(uint32_t una_direccion);
 
     protected:
 
     private:
         TipoReemplazo *tipo;
-        set<string> memoria;
+        set<uint32_t> memoria;
+
+        virtual int buscar_en_memoria(uint32_t un_tag);
+        virtual int agregar_en_memoria(uint32_t un_tag);
+
 };
 
 #endif // CACHEASOCIATIVA_H

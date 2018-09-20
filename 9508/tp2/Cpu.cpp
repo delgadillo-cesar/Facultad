@@ -1,18 +1,23 @@
 #include "Cpu.h"
+#include <iomanip>
 
 using namespace std;
 
+static const int ERROR = 1;
+static const int ERROR_CACHE = -1;
+static const int OK = 0;
 
-Cpu::Cpu(FILE* archivo) {
-    this->archivo = archivo;
-
+Cpu::Cpu(filebuf archivo, Cache *cache) {
+    this->archivo = move(archivo);
+    this->cache = cache;
 }
 
 void Cpu::procesar() {
-    uint8_t leido = fgetc(this->archivo);
+    istream arch(&this->archivo);
+    uint8_t leido = arch.get();
     uint32_t buffer = 0;
 
-    while (!feof(this->archivo)) {
+    while (arch) {
 
         if ((leido >= 48) && (leido <= 57)) {
             leido -= 48;
@@ -26,20 +31,39 @@ void Cpu::procesar() {
             buffer += leido;
         }
 
-        leido = fgetc(this->archivo);
-        if (leido == '\n' || feof(this->archivo)) {
-            this->procesar_direccion(buffer);
+        leido = arch.get();
+        if (leido == '\n' || !arch) {
+            if (this->procesar_direccion(buffer) == ERROR_CACHE) {
+                cerr << "Abortando" << endl;
+                break;
+            }
             buffer = 0;
-            leido = fgetc(this->archivo);
+            leido = arch.get();
         }
     }
 }
 
 
-void Cpu::procesar_direccion(uint32_t una_direccion) {
-    printf("Direccion: %08X\n", una_direccion);
+int Cpu::procesar_direccion(uint32_t una_direccion) {
+    if (una_direccion % 4 != 0) {
+        cerr << internal
+             << setfill('0');
+        cerr << "Direccion invalida: 0x"
+             << uppercase
+             << hex << setw(8) << una_direccion
+             << endl;
+        return ERROR;
+    }
+
+    int result = this->cache->buscar_direccion(una_direccion);
+    if ( result == -ERROR_CACHE) {
+        return ERROR;
+    }
+
+    return OK;
 }
 
 
 Cpu::~Cpu() {
+    this->archivo.close();
 }
