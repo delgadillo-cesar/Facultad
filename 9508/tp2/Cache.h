@@ -4,6 +4,7 @@
 #include <map>
 #include <cmath>
 #include <iomanip>
+#include <mutex>
 
 
 using namespace std;
@@ -12,7 +13,6 @@ using namespace std;
 class Cache
 {
     public:
-        Cache(int tamanio, int tamanio_liena, bool debug);
         Cache(map<string, string> config);
         virtual ~Cache();
         int buscar_direccion(uint32_t una_direccion);
@@ -32,6 +32,7 @@ class Cache
     private:
         uint32_t hits;
         uint32_t misses;
+        mutex m;
 };
 
 #endif // CACHE_H

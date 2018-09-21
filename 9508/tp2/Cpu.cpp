@@ -18,7 +18,6 @@ void Cpu::procesar() {
     uint32_t buffer = 0;
 
     while (arch) {
-
         if ((leido >= 48) && (leido <= 57)) {
             leido -= 48;
             buffer = buffer << 4;
@@ -63,6 +62,10 @@ int Cpu::procesar_direccion(uint32_t una_direccion) {
     return OK;
 }
 
+int Cpu::operator()() {
+    this->procesar();
+    return 0;
+}
 
 Cpu::~Cpu() {
     this->archivo.close();

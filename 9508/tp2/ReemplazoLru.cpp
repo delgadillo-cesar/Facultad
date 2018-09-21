@@ -10,7 +10,9 @@ void ReemplazoLru::agregar_tag(uint32_t un_tag) {
 }
 
 void ReemplazoLru::actualizar_tag(uint32_t un_tag) {
-    deque<uint32_t>::iterator it = find(this->cola.begin(), this->cola.end(), un_tag);
+    deque<uint32_t>::iterator it = find(this->cola.begin(),
+                                        this->cola.end(),
+                                        un_tag);
     if (it != this->cola.end())
         this->cola.erase(it);
 

@@ -16,6 +16,7 @@ class Cpu
         Cpu(filebuf archivo, Cache *cache);
         void procesar();
         ~Cpu();
+        int operator()();
 
     protected:
 

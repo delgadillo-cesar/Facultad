@@ -6,14 +6,6 @@ static const int MISS = 0;
 static const int HIT = 1;
 static const int ERROR = -1;
 
-Cache::Cache(int tamanio, int tamanio_liena, bool debug) {
-    this->tamanio = tamanio;
-    this->tamanio_linea = tamanio_liena;
-    this->debug = debug;
-    this->hits = 0;
-    this->misses = 0;
-}
-
 Cache::Cache(map<string, string> config) {
     this->tamanio = stoi(config["cache size"]);
     this->tamanio_linea = stoi(config["line size"]);
@@ -37,7 +29,7 @@ int Cache::buscar_direccion(uint32_t una_direccion) {
     offset = offset << (32 - len_offset);
     offset = offset >> (32 - len_offset);
 
-
+    this->m.lock();
     int result = this->buscar_tag(tag);
     if (result == ERROR) {
         return ERROR;
@@ -46,11 +38,13 @@ int Cache::buscar_direccion(uint32_t una_direccion) {
     if (result == MISS)
         this->agregar_tag(tag);
 
+    this->m.unlock();
     this->logear_direccion(una_direccion, result);
     return result;
 }
 
 int Cache::buscar_tag(uint32_t un_tag) {
+
     int result =  this->buscar_en_memoria(un_tag);
 
     if (result == HIT) this->hits++;
@@ -81,7 +75,7 @@ void Cache::logear_direccion(uint32_t una_direccion, int status) {
 void Cache::impimir_informe() {
     cout << endl << "# Informe" << endl << endl;
     cout << "* Total de hits: " << this->hits << endl;
-    cout << "* Total de misses: " << this->misses;
+    cout << "* Total de misses: " << this->misses << endl;
 }
 
 Cache::~Cache() {

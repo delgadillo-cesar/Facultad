@@ -5,6 +5,32 @@
 FactoryCache::FactoryCache(){
 }
 
+bool validaciones(map<string, string> configuracion) {
+    bool validacion = true;
+
+    if (configuracion.find("cache type") == configuracion.end()) {
+        validacion = false;
+        cerr << "Falta parametro 'cache type'" << endl;
+    }
+
+    if (configuracion.find("cache size") == configuracion.end()) {
+        validacion = false;
+        cerr << "Falta parametro 'cache size'" << endl;
+    }
+
+    if (configuracion.find("line size") == configuracion.end()) {
+        validacion = false;
+        cerr << "Falta parametro 'line size'" << endl;
+    }
+
+    if (configuracion.find("debug") == configuracion.end()) {
+        validacion = false;
+        cerr << "Falta parametro 'debug'" << endl;
+    }
+
+    return validacion;
+}
+
 Cache* FactoryCache::crear_cache(filebuf especificaciones) {
     map<string, string> configuracion;
     istream arch(&especificaciones);
@@ -23,6 +49,10 @@ Cache* FactoryCache::crear_cache(filebuf especificaciones) {
             buffer += leido;
         }
         leido = arch.get();
+    }
+
+    if(!validaciones(configuracion)) {
+        return nullptr;
     }
 
     especificaciones.close();

@@ -1,37 +1,62 @@
 #include <iostream>
 #include <fstream>
-#include "Cache.h"
-#include "CacheDirecta.h"
-#include "CacheAsociativa.h"
-#include "TipoReemplazo.h"
-#include "ReemplazoFifo.h"
-#include "ReemplazoLru.h"
-#include "Cpu.h"
-#include <map>
+#include <thread>
+#include <vector>
 #include "FactoryCache.h"
+#include "Cpu.h"
 
 using namespace std;
 
 static const int OK = 0;
 static const int ERROR = 1;
-
+static const int ARCH_CFG = 1;
+static const int ARCH_CPU0 = 2;
 
 int main(int argc, char* argv[]) {
-    filebuf fb_e;
-    if (!fb_e.open ("config.cfg",ios::in)) {
+
+    if (argc < 2) {
+        cerr << "Cantidad de parametros insuficientes" << endl;
+        cerr << "Se espera: <archivo.cfg> <cpu-01.bin> [<cpu-NN.bin>]"<< endl;
+        return ERROR;
+    }
+
+    filebuf fb;
+    if (!fb.open (argv[ARCH_CFG],ios::in)) {
+        cerr << "No se pudo abrir el archivo de configuracion" << endl;
         return ERROR;
     }
 
     FactoryCache fc;
-    Cache* cache = fc.crear_cache(move(fb_e));
+    Cache* cache = fc.crear_cache(move(fb));
 
-    filebuf fb;
-    if (!fb.open ("cpu-00.bin",ios::in)) {
+    if (!cache) {
+        cerr << "No se pudo crear la cache" << endl;
         return ERROR;
     }
 
-    Cpu cpu(move(fb), cache);
-    cpu.procesar();
+    vector<Cpu*> cpus;
+    for (int i = ARCH_CPU0; i < argc; i++) {
+        filebuf fb_c;
+        if (!fb_c.open (argv[i],ios::in)) {
+            cerr << "No se pudo abrir el archivo " << argv[i] << endl;
+            return ERROR;
+        }
+        Cpu* cpu = new Cpu(move(fb_c), cache);
+        cpus.push_back(cpu);
+    }
+
+
+    vector<thread*> hilos;
+    for (uint32_t i = 0; i < cpus.size(); i++) {
+		hilos.push_back(new thread(ref(*(cpus[i]))));
+    }
+
+    for (uint32_t i = 0; i < cpus.size(); i++) {
+		hilos[i]->join();
+		delete hilos[i];
+        delete cpus[i];
+    }
+
     cache->impimir_informe();
     delete cache;
 
