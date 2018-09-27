@@ -3,9 +3,8 @@
 #include <thread>
 #include <vector>
 #include "FactoryCache.h"
+#include "Logueador.h"
 #include "Cpu.h"
-
-using namespace std;
 
 static const int OK = 0;
 static const int ERROR = 1;
@@ -13,42 +12,45 @@ static const int ARCH_CFG = 1;
 static const int ARCH_CPU0 = 2;
 
 int main(int argc, char* argv[]) {
-
     if (argc < 2) {
-        cerr << "Cantidad de parametros insuficientes" << endl;
-        cerr << "Se espera: <archivo.cfg> <cpu-01.bin> [<cpu-NN.bin>]"<< endl;
+        std::cerr << "Cantidad de parametros insuficientes" << std::endl;
+        std::cerr << "Se espera: <archivo.cfg> <cpu-01.bin> [<cpu-NN.bin>]"
+                  << std::endl;
         return ERROR;
     }
 
-    filebuf fb;
-    if (!fb.open (argv[ARCH_CFG],ios::in)) {
-        cerr << "No se pudo abrir el archivo de configuracion" << endl;
+    std::filebuf fb;
+    if (!fb.open(argv[ARCH_CFG],std::ios::in)) {
+        std::cerr << "No se pudo abrir el archivo de configuracion"
+                  << std::endl;
         return ERROR;
     }
 
-    FactoryCache fc;
-    Cache* cache = fc.crear_cache(move(fb));
+    Logueador loger;
+    FactoryCache fc(loger);
+    Cache* cache = fc.crear_cache(std::move(fb));
 
     if (!cache) {
-        cerr << "No se pudo crear la cache" << endl;
+        std::cerr << "No se pudo crear la cache" << std::endl;
         return ERROR;
     }
 
-    vector<Cpu*> cpus;
+    std::vector<Cpu*> cpus;
     for (int i = ARCH_CPU0; i < argc; i++) {
-        filebuf fb_c;
-        if (!fb_c.open (argv[i],ios::in)) {
-            cerr << "No se pudo abrir el archivo " << argv[i] << endl;
+        std::filebuf fb_c;
+        if (!fb_c.open(argv[i], std::ios::in)) {
+            std::cerr << "No se pudo abrir el archivo " << argv[i]
+                      << std::endl;
             return ERROR;
         }
-        Cpu* cpu = new Cpu(move(fb_c), cache);
+        Cpu* cpu = new Cpu(std::move(fb_c), cache, loger);
         cpus.push_back(cpu);
     }
 
 
-    vector<thread*> hilos;
+    std::vector<std::thread*> hilos;
     for (uint32_t i = 0; i < cpus.size(); i++) {
-		hilos.push_back(new thread(ref(*(cpus[i]))));
+		hilos.push_back(new std::thread(std::ref(*(cpus[i]))));
     }
 
     for (uint32_t i = 0; i < cpus.size(); i++) {

@@ -3,26 +3,24 @@
 #include <iostream>
 #include <stdio.h>
 #include <inttypes.h>
-#include "Cache.h"
 #include <fstream>
-
-
-using namespace std;
+#include <string>
+#include "Cache.h"
 
 
 class Cpu
 {
     public:
-        Cpu(filebuf archivo, Cache *cache);
+        Cpu(std::filebuf archivo, Cache *cache, Logueador& loger);
         void procesar();
         ~Cpu();
         int operator()();
 
     protected:
-
     private:
-        filebuf archivo;
+        std::filebuf archivo;
         Cache* cache;
+        Logueador* loger;
         int procesar_direccion(uint32_t una_direccion);
 };
 

@@ -1,47 +1,46 @@
+#include <map>
+#include <string>
 #include "FactoryCache.h"
 #include "CacheDirecta.h"
 #include "CacheAsociativa.h"
+#include "Logueador.h"
 
-FactoryCache::FactoryCache(){
+FactoryCache::FactoryCache(Logueador& loger) : loger() {
+    this->loger = &loger;
 }
 
-bool validaciones(map<string, string> configuracion) {
+bool validaciones(std::map<std::string, std::string> configuracion) {
     bool validacion = true;
 
     if (configuracion.find("cache type") == configuracion.end()) {
         validacion = false;
-        cerr << "Falta parametro 'cache type'" << endl;
+        std::cerr << "Falta parametro 'cache type'" << std::endl;
     }
 
     if (configuracion.find("cache size") == configuracion.end()) {
         validacion = false;
-        cerr << "Falta parametro 'cache size'" << endl;
+        std::cerr << "Falta parametro 'cache size'" << std::endl;
     }
 
     if (configuracion.find("line size") == configuracion.end()) {
         validacion = false;
-        cerr << "Falta parametro 'line size'" << endl;
-    }
-
-    if (configuracion.find("debug") == configuracion.end()) {
-        validacion = false;
-        cerr << "Falta parametro 'debug'" << endl;
+        std::cerr << "Falta parametro 'line size'" << std::endl;
     }
 
     return validacion;
 }
 
-Cache* FactoryCache::crear_cache(filebuf especificaciones) {
-    map<string, string> configuracion;
-    istream arch(&especificaciones);
+Cache* FactoryCache::crear_cache(std::filebuf especificaciones) {
+    std::map<std::string, std::string> configuracion;
+    std::istream arch(&especificaciones);
     char leido = arch.get();
-    string buffer = "";
+    std::string buffer = "";
 
     while (arch) {
         if (leido == '\n' || !arch) {
             int pos_separador = buffer.find("=");
-            string clave = buffer.substr(0, pos_separador);
-            string valor = buffer.substr(pos_separador + 1,
+            std::string clave = buffer.substr(0, pos_separador);
+            std::string valor = buffer.substr(pos_separador + 1,
                                          buffer.length() - pos_separador);
             configuracion[clave] = valor;
             buffer = "";
@@ -51,11 +50,12 @@ Cache* FactoryCache::crear_cache(filebuf especificaciones) {
         leido = arch.get();
     }
 
-    if(!validaciones(configuracion)) {
+    if (!validaciones(configuracion)) {
         return nullptr;
     }
 
     especificaciones.close();
+
     if (configuracion["cache type"] == "direct") {
         return this->crear_cache_directa(configuracion);
     }
@@ -70,20 +70,21 @@ Cache* FactoryCache::crear_cache(filebuf especificaciones) {
     return nullptr;
 }
 
-Cache* FactoryCache::crear_cache_directa (map<string, string> config) {
-    Cache* cache = new CacheDirecta (config);
+Cache* FactoryCache::crear_cache_directa(
+                                 std::map<std::string, std::string> config) {
+    Cache* cache = new CacheDirecta(config, *this->loger);
     return cache;
 }
 
-Cache* FactoryCache::crear_cache_asociativa(map<string, string> config,
-                                            int tipo) {
+Cache* FactoryCache::crear_cache_asociativa(
+                         std::map<std::string, std::string> config, int tipo) {
     if (config["cache type"] == "associative-fifo") {
-        Cache* cache = new CacheAsociativa(config, TIPO_FIFO);
+        Cache* cache = new CacheAsociativa(config, TIPO_FIFO, *this->loger);
         return cache;
     }
 
     if (config["cache type"] == "associative-lru") {
-        Cache* cache = new CacheAsociativa(config, TIPO_LRU);
+        Cache* cache = new CacheAsociativa(config, TIPO_LRU, *this->loger);
         return cache;
     }
 

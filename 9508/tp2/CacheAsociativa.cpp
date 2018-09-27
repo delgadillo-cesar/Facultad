@@ -1,5 +1,8 @@
 #include "CacheAsociativa.h"
 #include <iostream>
+#include <string>
+#include <map>
+#include <set>
 #include "ReemplazoFifo.h"
 #include "ReemplazoLru.h"
 
@@ -9,8 +12,9 @@ static const int HIT = 1;
 static const int OK = 0;
 static const int ERROR = -1;
 
-CacheAsociativa::CacheAsociativa(map<string, string> config, int tipo_reemp)
-               : Cache(config) {
+CacheAsociativa::CacheAsociativa(std::map<std::string, std::string> config,
+                                 int tipo_reemp, Logueador& loger)
+               : Cache(config, loger) {
     if (tipo_reemp == TIPO_FIFO)
         this->tipo = new ReemplazoFifo();
 

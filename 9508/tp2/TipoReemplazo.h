@@ -1,10 +1,7 @@
 #ifndef TIPOREEMPLAZO_H
 #define TIPOREEMPLAZO_H
 
-#include <deque>
 #include <string>
-
-using namespace std;
 
 class TipoReemplazo
 {

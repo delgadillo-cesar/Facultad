@@ -1,19 +1,17 @@
 #ifndef CACHE_H
 #define CACHE_H
 #include <inttypes.h>
-#include <map>
-#include <cmath>
 #include <iomanip>
+#include <string>
+#include <cmath>
 #include <mutex>
-
-
-using namespace std;
-
+#include <map>
+#include "Logueador.h"
 
 class Cache
 {
     public:
-        Cache(map<string, string> config);
+        Cache(std::map<std::string, std::string> config, Logueador& loger);
         virtual ~Cache();
         int buscar_direccion(uint32_t una_direccion);
         void impimir_informe();
@@ -32,7 +30,8 @@ class Cache
     private:
         uint32_t hits;
         uint32_t misses;
-        mutex m;
+        std::mutex m;
+        Logueador* loger;
 };
 
 #endif // CACHE_H

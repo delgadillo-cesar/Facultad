@@ -1,19 +1,21 @@
 #include "Cpu.h"
 #include <iomanip>
-
-using namespace std;
+#include <sstream>
+#include <string>
+#include <vector>
 
 static const int ERROR = 1;
 static const int ERROR_CACHE = -1;
 static const int OK = 0;
 
-Cpu::Cpu(filebuf archivo, Cache *cache) {
+Cpu::Cpu(std::filebuf archivo, Cache *cache, Logueador& loger) {
     this->archivo = move(archivo);
     this->cache = cache;
+    this->loger = &loger;
 }
 
 void Cpu::procesar() {
-    istream arch(&this->archivo);
+    std::istream arch(&this->archivo);
     uint8_t leido = arch.get();
     uint32_t buffer = 0;
 
@@ -33,7 +35,18 @@ void Cpu::procesar() {
         leido = arch.get();
         if (leido == '\n' || !arch) {
             if (this->procesar_direccion(buffer) == ERROR) {
-                cerr << "Abortando" << endl;
+                std::stringstream s_direccion;
+                s_direccion << std::setfill('0')
+                            << std::setw(8)
+                            << std::hex
+                            << buffer;
+
+                std::vector<std::string> lineas;
+                std::string texto = "Direccion invalida: 0x";
+                texto += s_direccion.str();
+                lineas.push_back(texto);
+                lineas.push_back("Abortando");
+                this->loger->loguear_error(lineas);
                 break;
             }
             buffer = 0;
@@ -45,17 +58,11 @@ void Cpu::procesar() {
 
 int Cpu::procesar_direccion(uint32_t una_direccion) {
     if (una_direccion % 4 != 0) {
-        cerr << internal
-             << setfill('0');
-        cerr << "Direccion invalida: 0x"
-             << uppercase
-             << hex << setw(8) << una_direccion
-             << endl;
         return ERROR;
     }
 
     int result = this->cache->buscar_direccion(una_direccion);
-    if ( result == ERROR_CACHE) {
+    if (result == ERROR_CACHE) {
         return ERROR;
     }
 

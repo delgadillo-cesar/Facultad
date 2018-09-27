@@ -1,8 +1,7 @@
 #ifndef REEMPLAZOFIFO_H
 #define REEMPLAZOFIFO_H
+#include <deque>
 #include "TipoReemplazo.h"
-
-using namespace std;
 
 class ReemplazoFifo : public TipoReemplazo {
     public:
@@ -13,9 +12,8 @@ class ReemplazoFifo : public TipoReemplazo {
         virtual uint32_t tag_para_quitar();
 
     protected:
-
     private:
-        deque<uint32_t> cola;
+        std::deque<uint32_t> cola;
 };
 
 #endif // REEMPLAZOFIFO_H

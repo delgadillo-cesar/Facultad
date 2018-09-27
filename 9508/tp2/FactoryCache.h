@@ -1,26 +1,26 @@
 #ifndef FACTORYCACHE_H
 #define FACTORYCACHE_H
 #include <iostream>
+#include <string>
+#include <map>
 #include <fstream>
 #include "Cache.h"
 #include "TipoReemplazo.h"
-#include <map>
-
-using namespace std;
+#include "Logueador.h"
 
 class FactoryCache
 {
     public:
-        FactoryCache();
+        explicit FactoryCache(Logueador& loger);
         ~FactoryCache();
-        Cache* crear_cache();
-        Cache* crear_cache(filebuf especificaciones);
-        Cache* crear_cache_directa (map<string, string> config);
-        Cache* crear_cache_asociativa(map<string, string> config, int tipo);
+        Cache* crear_cache(std::filebuf especificaciones);
+        Cache* crear_cache_directa(std::map<std::string, std::string> config);
+        Cache* crear_cache_asociativa(
+                          std::map<std::string, std::string> config, int tipo);
 
     protected:
-
     private:
+        Logueador* loger;
 };
 
 #endif // FACTORYCACHE_H
