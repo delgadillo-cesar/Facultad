@@ -2,9 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define OK 0
-#define ERROR 1
-
 #define ISTORE 54
 #define ILOAD  21
 #define BIPUSH 16
@@ -19,9 +16,11 @@
 #define IMUL   104
 #define ISUB   100
 
-void instruccion_istore(jvm_t *la_jvm, char opeando);
-void instruccion_iload(jvm_t *la_jvm, char operando);
-void instruccion_bipush(jvm_t *la_jvm, char operando);
+static const int OK = 0;
+
+void instruccion_istore(jvm_t *la_jvm, int8_t opeando);
+void instruccion_iload(jvm_t *la_jvm, int8_t operando);
+void instruccion_bipush(jvm_t *la_jvm, int8_t operando);
 void instruccion_dup(jvm_t *la_jvm);
 void instruccion_iand(jvm_t *la_jvm);
 void instruccion_ixor(jvm_t *la_jvm);
@@ -36,7 +35,6 @@ void instruccion_isub(jvm_t *la_jvm);
 
 
 int jvm_crear(jvm_t *la_jvm, int* memoria, size_t tamanio_memoria) {
-//    pila_crear(&(la_jvm->pila), sizeof(char));
     pila_crear(&(la_jvm->pila), sizeof(uint32_t));
     la_jvm->memoria = memoria;
     la_jvm->tamanio_memoria = tamanio_memoria;
@@ -55,7 +53,7 @@ int jvm_procesar(jvm_t *la_jvm, programa_t *programa) {
     fprintf(stdout, "Bytecode trace\n");
 
     while (!programa_obtener_instruccion(programa, &instruccion)) {
-        switch((int)instruccion){
+        switch (instruccion) {
             case ISTORE :
                 programa_obtener_instruccion(programa, &instruccion);
                 instruccion_istore(la_jvm, instruccion);
@@ -112,23 +110,23 @@ int jvm_finalizar(jvm_t *la_jvm) {
 }
 
 
-void instruccion_istore(jvm_t *la_jvm, char opeando) {
+void instruccion_istore(jvm_t *la_jvm, int8_t opeando) {
     fprintf(stdout, "istore\n");
     int32_t elemento;
 
     pila_sacar(&(la_jvm->pila), &elemento);
-    (la_jvm->memoria)[(int)opeando] = elemento;
+    (la_jvm->memoria)[opeando] = elemento;
 }
 
-void instruccion_iload(jvm_t *la_jvm, char operando) {
+void instruccion_iload(jvm_t *la_jvm, int8_t operando) {
     fprintf(stdout, "iload\n");
     int32_t elemento;
 
-    elemento = (la_jvm->memoria)[(int)operando];
+    elemento = (la_jvm->memoria)[operando];
     pila_agregar(&(la_jvm->pila), &elemento);
 }
 
-void instruccion_bipush(jvm_t *la_jvm, char operando) {
+void instruccion_bipush(jvm_t *la_jvm, int8_t operando) {
     int32_t dato = operando;
     fprintf(stdout, "bipush\n");
     pila_agregar(&(la_jvm->pila), &dato);

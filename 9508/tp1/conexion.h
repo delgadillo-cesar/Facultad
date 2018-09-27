@@ -23,10 +23,12 @@ int conexion_aceptar_cliente(conexion_t *conexion);
 
 int conexion_enviar_msg(conexion_t *conexion, void* msg, int32_t tamanio);
 
-int conexion_recibir_msg(conexion_t *conexion, void* mensaje);
+int conexion_recibir_msg(conexion_t *conexion, void* buffer, int buffer_size);
 
-int conexion_recibir_msg2(conexion_t *conexion, void** mensaje);
+int conexion_cerrar_lectura(conexion_t *conexion);
 
-void conexion_destruir(conexion_t *conexion);
+int conexion_cerrar_escritura(conexion_t *conexion);
+
+void conexion_finalizar(conexion_t *conexion);
 
 #endif

@@ -7,8 +7,6 @@ typedef struct  {
     pila_t pila;
     int *memoria;
     int tamanio_memoria;
-    programa_t programa;
-    int instruccion_actual;
 } jvm_t;
 
 int jvm_crear(jvm_t *la_jvm, int* memoria, size_t tamanio_memoria);

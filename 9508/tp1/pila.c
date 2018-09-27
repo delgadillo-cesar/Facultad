@@ -1,10 +1,8 @@
 #include <string.h>
 #include "pila.h"
 
-#define OK 0
-#define ERROR 1
-#define CANTIDAD_INCREMENTO 10
-
+static const int OK = 0;
+static const int ERROR = 1;
 
 int pila_crear(pila_t* la_pila, size_t tamanio_elemento) {
     la_pila->tamanio_elemento = tamanio_elemento;

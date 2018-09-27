@@ -4,44 +4,49 @@
 #include "jvm.h"
 #include "programa.h"
 #include "conexion.h"
+static const int ERROR_CONEX = -1;
 
-#define OK 0
-#define ERROR 1
+static const int OK = 0;
+static const int ERROR = 1;
 
 
 int variables_dump(conexion_t* conexion, int* memoria, int32_t mem_size) {
-    int idx = 0, status;
-    char titulo[] = "Variables dump\n";
-    char* msg = "resultados";
-    char* salida;
+    int status;
+    char titulo[] = "Variables dump";
     int32_t size_resultados;
-    int32_t size_salida;
+    int32_t* memoria_send = malloc(sizeof(int32_t) * mem_size);
 
 
-    size_salida = sizeof(char) *  (strlen(titulo) + (9 * mem_size) + 1);
-    salida = malloc(size_salida);
-    sprintf(salida, "%s", titulo);
-    idx += strlen(titulo);
+    fprintf(stdout, "\n%s\n", titulo);
 
     for (int i = 0; i < mem_size; i++) {
-        sprintf(salida+idx, "%08x\n", memoria[i]);
-        idx += 9;
+        memoria_send[i] = htonl(memoria[i]);
+        fprintf(stdout, "%08x\n", memoria[i]);
     }
-    salida[idx] = 0;
 
-    size_resultados = sizeof(char) * strlen(msg) + 1;
-    status = conexion_enviar_msg(conexion, msg, size_resultados);
-    if (status == ERROR) {
+    size_resultados = sizeof(int32_t) * mem_size;
+    status = conexion_enviar_msg(conexion, memoria_send, size_resultados);
+    if (status == ERROR_CONEX) {
         return ERROR;
     }
 
-    status = conexion_enviar_msg(conexion, salida, size_salida);
-    if (status == ERROR) {
+    free(memoria_send);
+
+    return OK;
+}
+
+int preparar_servidor(conexion_t* conexion, char* port) {
+    if (conexion_crear_servidor(conexion, port, "localhost") == ERROR) {
+        fprintf(stderr, "No se pudo iniciar la conexion\n");
         return ERROR;
     }
-    fprintf(stdout, "\n%s", salida);
 
-    free(salida);
+    if (conexion_aceptar_cliente(conexion) == ERROR) {
+        fprintf(stderr, "Error al conectar al cliente\n");
+        conexion_finalizar(conexion);
+        return ERROR;
+    }
+
     return OK;
 }
 
@@ -49,50 +54,32 @@ int iniciar_servidor(char* port) {
     conexion_t servidor;
     programa_t programa;
     jvm_t jvm;
-    int32_t long_prog;
     int32_t cant_mem;
     int* memoria;
 
-    if (conexion_crear_servidor(&servidor, port, "localhost") == ERROR) {
-        fprintf(stderr, "No se pudo iniciar la conexion\n");
+    if (preparar_servidor(&servidor, port) == ERROR)
         return ERROR;
-    }
 
-    if (conexion_aceptar_cliente(&servidor) == ERROR) {
-        fprintf(stderr, "Error al conectar al cliente\n");
-        return ERROR;
-    }
-
-    if (conexion_recibir_msg(&servidor, &cant_mem) == -1) {
+    if (conexion_recibir_msg(&servidor, &cant_mem, sizeof(int32_t)) == -1) {
         fprintf(stderr, "Error al recivir la cantidad de memoria\n");
+        conexion_finalizar(&servidor);
         return ERROR;
     } else {
         cant_mem = ntohl(cant_mem);
     }
 
-    if (conexion_recibir_msg(&servidor, &long_prog) == -1) {
-        fprintf(stderr, "Error al recivir la longitud del programa\n");
-        return ERROR;
-    } else {
-        long_prog = ntohl(long_prog);
-    }
-
-    if (long_prog <= 0) {
-        fprintf(stderr, "Longitud del programa cero\n");
-        return ERROR;
-    }
-
-    memoria = malloc(sizeof(int*) * cant_mem);
+    memoria = malloc(sizeof(int) * cant_mem);
+    memset(memoria, 0, sizeof(int) * cant_mem);
     jvm_crear(&jvm, memoria, cant_mem);
 
-    programa_crear_remoto(&programa, &servidor, long_prog);
+    programa_crear_remoto(&programa, &servidor);
     jvm_procesar(&jvm, &programa);
     variables_dump(&servidor, memoria, cant_mem);
 
     jvm_finalizar(&jvm);
     free(memoria);
-    programa_destruir(&programa);
-    conexion_destruir(&servidor);
+    programa_finalizar(&programa);
+    conexion_finalizar(&servidor);
 
     return OK;
 }

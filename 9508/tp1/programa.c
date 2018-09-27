@@ -2,17 +2,14 @@
 #include <string.h>
 #include <stdio.h>
 
-//#define OK 0
-//#define ERROR 1
 static const int OK = 0;
 static const int ERROR = 1;
+static const int CANT_RECIVIR = 10;
 
 int programa_descarcar_bytecodes(programa_t *programa);
 
-int programa_crear_remoto(programa_t *programa, conexion_t* conexion,
-                          size_t longitud){
-    programa->programa = malloc(longitud);
-    programa->tamanio_programa = longitud;
+int programa_crear_remoto(programa_t *programa, conexion_t* conexion) {
+    programa->programa = NULL;
     programa->instruccion_actual = 0;
     programa->conexion = conexion;
     programa->ultima_descargada = -1;
@@ -20,16 +17,16 @@ int programa_crear_remoto(programa_t *programa, conexion_t* conexion,
     return OK;
 }
 
-int programa_obtener_instruccion(programa_t *programa, char *instruccion){
+int programa_obtener_instruccion(programa_t *programa, uint8_t *instruccion) {
     int status;
 
-    if (programa->instruccion_actual >= programa->tamanio_programa)
-        return ERROR;
-
-    if (programa->instruccion_actual > programa->ultima_descargada) {
+    if (programa->instruccion_actual >= programa->ultima_descargada) {
         status = programa_descarcar_bytecodes(programa);
         if (status == ERROR) return ERROR;
     }
+
+    if (programa->instruccion_actual >= programa->ultima_descargada)
+        return ERROR;
 
     char *origen = (programa->programa);
     origen += (programa->instruccion_actual);
@@ -39,28 +36,24 @@ int programa_obtener_instruccion(programa_t *programa, char *instruccion){
     return OK;
 }
 
-int programa_destruir(programa_t *programa){
+int programa_finalizar(programa_t *programa){
     free(programa->programa);
 
     return OK;
 }
 
 int programa_descarcar_bytecodes(programa_t *programa) {
-    void *buffer;
+    void *buffer = malloc(sizeof(char) * CANT_RECIVIR);
     int status;
-    char* msg = "mas_datos";
-    uint32_t size_msg = sizeof(char*) + strlen(msg) + 1;
 
-    status = conexion_enviar_msg(programa->conexion, msg, size_msg);
-    if (status == ERROR) {
-        return ERROR;
-    }
-
-    status = conexion_recibir_msg2(programa->conexion, &buffer);
+    status = conexion_recibir_msg(programa->conexion, buffer, CANT_RECIVIR);
     if (status == -1) {
+        free(buffer);
         return ERROR;
     }
 
+    int long_prog = programa->ultima_descargada + 1 + status;
+    programa->programa = realloc(programa->programa, long_prog);
     char *bytecodes = (programa->programa);
     bytecodes += (programa->ultima_descargada + 1);
     memcpy(bytecodes, buffer, status);
